@@ -1,8 +1,8 @@
 # DiffractionMicroscopy
-Inferring the Fourier Transform from the squared modulus of the Fourier Transform?
+Inferring the Fourier Transform from a (noisy, censored) reading of the *squared modulus* of the Fourier Transform?
 
 ## Authors
-- David W. Hogg (NYU CCPP) (SCDA)
+- David W. Hogg (NYU CCPP) (NYU CDS) (Simons SCDA)
 
 ## License
 Copyright 2015 David W. Hogg.
