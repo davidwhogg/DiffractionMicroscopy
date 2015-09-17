@@ -133,27 +133,31 @@ class MoG():
 
 if __name__ == "__main__":
     from matplotlib import pylab as plt
-    tiny = 0.001
-    x = np.arange(-10. + 0.5 * tiny, 10., tiny)
-    x = np.vstack((x, np.zeros_like(x))).T
-    xi = 1. * x
+    tiny = 0.01
+    xpix = np.arange(0. + 0.5 * tiny, 5., tiny)
+    ypix = np.arange(-1. + 0.5 * tiny, 3., tiny)
+    xv, yv = np.meshgrid(xpix, ypix)
+    ny, nx = xv.shape
+    x = np.vstack((xv.flatten(), yv.flatten())).T
+    xi = x - np.array([2.5, 1.0])
     lnamps = np.array([0.1, 0.2, 0.2])
-    means = np.array([[1., 0.], [2.0, 0.], [2.0, 1.0]])
+    means = np.array([[1., 0.], [2.0, 0.], [1.8, 1.0]])
     sigma = 0.2
     vars = np.array([[[sigma * sigma, 0.], [0., sigma * sigma]],
                      [[4. * sigma * sigma, 0.], [0., 4. * sigma * sigma]],
                      [[4. * sigma * sigma, 0.], [0., 4. * sigma * sigma]]])
     mog = MoG(lnamps, means, vars)
+    f = mog.evaluate(x).reshape((ny, nx))
+    ft = mog.evaluate_FT(xi).reshape((ny, nx))
 
-    f = mog.evaluate(x)
+    kwargs = {"cmap": "cool", "interpolation": "nearest", "origin": "lower"}
     plt.clf()
-    plt.plot(x[:,0], f, "k-")
-    plt.xlabel(r"$x$")
-    plt.savefig("realspace.png")
-    plt.clf()
-    ft = mog.evaluate_FT(xi)
-    plt.plot(xi[:,0], ft.real, "b-")
-    plt.plot(xi[:,0], ft.imag, "r-")
-    plt.plot(xi[:,0], (ft * ft.conj()).real, "k-")
-    plt.xlabel(r"$\xi$")
-    plt.savefig("fourierspace.png")
+    plt.subplot(221)
+    plt.imshow(f, **kwargs)
+    plt.subplot(222)
+    plt.imshow(ft.real, **kwargs)
+    plt.subplot(223)
+    plt.imshow(ft.imag, **kwargs)
+    plt.subplot(224)
+    plt.imshow((ft * ft.conj()).real, **kwargs)
+    plt.savefig("images.png")
