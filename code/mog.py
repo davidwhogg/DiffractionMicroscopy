@@ -140,24 +140,30 @@ if __name__ == "__main__":
     ny, nx = xv.shape
     x = np.vstack((xv.flatten(), yv.flatten())).T
     xi = x - np.array([2.5, 1.0])
-    lnamps = np.array([0.1, 0.2, 0.2])
+    lnamps = np.array([0.1, 0.3, 0.4])
     means = np.array([[1., 0.], [2.0, 0.], [1.8, 1.0]])
     sigma = 0.2
     vars = np.array([[[sigma * sigma, 0.], [0., sigma * sigma]],
                      [[4. * sigma * sigma, 0.], [0., 4. * sigma * sigma]],
-                     [[4. * sigma * sigma, 0.], [0., 4. * sigma * sigma]]])
+                     [[3. * sigma * sigma, 0.], [0., 3. * sigma * sigma]]])
     mog = MoG(lnamps, means, vars)
     f = mog.evaluate(x).reshape((ny, nx))
     ft = mog.evaluate_FT(xi).reshape((ny, nx))
 
-    kwargs = {"cmap": "cool", "interpolation": "nearest", "origin": "lower"}
+    kwargs = {"interpolation": "nearest", "origin": "lower", "aspect": "equal"}
     plt.clf()
     plt.subplot(221)
-    plt.imshow(f, **kwargs)
-    plt.subplot(222)
-    plt.imshow(ft.real, **kwargs)
+    plt.imshow(-f, cmap="copper", vmin=-np.max(f), vmax=0., **kwargs)
     plt.subplot(223)
-    plt.imshow(ft.imag, **kwargs)
+    yr = ft.real
+    yi = ft.imag
+    ymax = max(np.max(np.abs(yr)), np.max(np.abs(yi)))
+    plt.imshow(yr, cmap="RdBu", vmin=-ymax, vmax=ymax, **kwargs)
     plt.subplot(224)
-    plt.imshow((ft * ft.conj()).real, **kwargs)
+    plt.imshow(yi, cmap="RdBu", vmin=-ymax, vmax=ymax, **kwargs)
+    plt.subplot(222)
+    y = (ft * ft.conj()).real
+    y += 0.3 * np.random.normal(size=y.shape)
+    y[np.where(np.sum(xi ** 2, axis=1).reshape(ny, nx) < 0.03)] = -np.inf
+    plt.imshow(-y, cmap="copper", vmin=-np.max(y), vmax=0., **kwargs)
     plt.savefig("images.png")
