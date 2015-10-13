@@ -98,3 +98,8 @@ if __name__ == "__main__":
     plt.subplot(2,2,4)
     plt.imshow(trueft.imag, **kwargs)
     plt.savefig("whatev.png")
+
+    # construct and test class
+    model = pharetModel(data, shape)
+    model.set_real_image(trueimage)
+    print(model.get_score())
