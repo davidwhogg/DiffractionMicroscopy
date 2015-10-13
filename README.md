@@ -8,6 +8,13 @@ in microscopy applications.
 
 - **David W. Hogg** (SCDA) (NYU) (MPIA)
 
+## Acknowledgements
+
+This project is heavily influenced by discussions with
+- Charlie Epstein (Penn)
+- Jeremy Magland (Penn) (SCDA)
+- Leslie Greengard (SCDA) (NYU)
+
 ## License
 
 **Copyright 2015 David W. Hogg**.
@@ -22,7 +29,7 @@ See the file `LICENSE` for more details.
 of that Fourier transform comes up in problems of
 **x-ray diffraction** and **diffraction microscopy**.
 In principle it also might arise in **adaptive optics**.
-- The problem is analogous (or identical to, in some sense)
+- The problem is analogous to (or identical to, in some sense)
 inferring a function from an **observation of its auto-correlation**.
 - We will concentrate on methods that involve
 explicit **optimization of a justified objective function**
