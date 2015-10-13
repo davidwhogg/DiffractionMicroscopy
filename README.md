@@ -10,7 +10,9 @@ in microscopy applications.
 
 ## License
 
-Copyright 2015 the author.  **All rights reserved**.
+**Copyright 2015 David W. Hogg**.
+Any code in this repository is licensed under the open-source **MIT License**.
+See the file `LICENSE` for more details.
 
 ## Comments
 
