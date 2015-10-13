@@ -32,5 +32,5 @@ In principle it also might arise in **adaptive optics**.
 - The problem is analogous to (or identical to, in some sense)
 inferring a function from an **observation of its auto-correlation**.
 - We will concentrate on methods that involve
-explicit **optimization of a justified objective function**
-or probabilistic inference.
+either explicit **optimization of a justified objective function**
+or else some kind of probabilistic inference.
