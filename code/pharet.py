@@ -77,24 +77,25 @@ class pharetModel:
     def get_score_L2(self):
         return np.sum(((self.get_data_residual()).real) ** 2)
 
-    def do_one_crazy_map(self, tiny=1.e-5):
+    def do_one_crazy_map(self, tiny=1.e-10):
         """
         Do one iteration of the solution map of Magland et al.
         """
+        oldimage = self.get_real_image().copy()
+        oldft = self.get_ft_image().copy()
         # fix squared norm
-        newft = self.get_ft_image() \
-            * np.sqrt(self.get_data() / self.get_squared_norm_ft_image())
-        self.set_ft_image(newft)
-        image = self.get_real_image()
+        newft = oldft * np.sqrt(self.get_data() / self.get_squared_norm_ft_image())
+        self.set_ft_image(0.4 * newft + 0.6 * oldft)
         # zero out borders
+        newimage = self.get_real_image().copy()
         pp = self.padding
-        image[:pp,:] = 0.
-        image[:,:pp] = 0.
-        image[-pp:,:] = 0.
-        image[:,-pp:] = 0.
+        newimage[:pp,:] = 0.
+        newimage[:,:pp] = 0.
+        newimage[-pp:,:] = 0.
+        newimage[:,-pp:] = 0.
         # clip negatives
-        image = np.clip(image, tiny * np.max(image), np.Inf)
-        self.set_real_image(image)
+        newimage = np.clip(newimage, tiny * np.max(newimage), np.Inf)
+        self.set_real_image(2. * newimage / 3. + oldimage / 3.)
 
     def plot(self, title, truth=None):
         kwargs = {"interpolation": "nearest",
@@ -173,18 +174,20 @@ if __name__ == "__main__":
 
     # try optimization by a schedule of minimizers
     method = "Powell"
-    maxfev = 100000
+    maxfev = 50000
     bettervector = guessvector.copy()
     for ii in range(5):
         jj = ii + 1
 
-        # zeroth crazy map
-        for qq in range(100):
+        if ii == 0:
+            # zeroth crazy map
             guessvector = bettervector.copy()
             model.set_real_image_from_vector(guessvector)
-            model.do_one_crazy_map()
+            for qq in range(1, 2 ** 16 + 1):
+                model.do_one_crazy_map()
+                if qq > 1000 and qq == 2 ** np.floor(np.log(qq) / np.log(2)).astype(int):
+                    print(jj, qq, model.get_score_L1(), model.get_score_L2())
             bettervector = model.get_real_image_vector()
-            print(jj, model.get_score_L1(), model.get_score_L2())
 
         # first levmar
         guessvector = bettervector.copy()
