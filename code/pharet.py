@@ -85,8 +85,8 @@ class pharetModel:
         """
         pp = self.padding
         image = np.zeros(self.imageshape)
-        image[pp:-pp,pp:-pp] = vector.reshape((self.imageshape[0] - 2 * pp,
-                                               self.imageshape[1] - 2 * pp))
+        image[pp:-pp,pp:-pp] = np.exp(vector).reshape((self.imageshape[0] - 2 * pp,
+                                                       self.imageshape[1] - 2 * pp))
         self.set_real_image(image)
 
     def __call__(self, vector):
@@ -126,26 +126,20 @@ if __name__ == "__main__":
     # distort image
     guessimage = trueimage + 0.1 * np.random.normal(size=shape)
     guessimage = np.clip(guessimage, 0.01, np.Inf)[padding:-padding,padding:-padding]
-    guessvector = guessimage.flatten()
+    guessvector = np.log(guessimage.flatten())
     model.set_real_image_from_vector(guessvector)
-    print(model.get_score())
+    jj = 0
+    print(jj, model.get_score())
     plt.clf()
     model.plot("before", truth=trueimage)
-    plt.savefig("whatev1.png")
+    plt.savefig("whatev{jj:1d}.png".format(jj=jj))
 
     # try optimization
-    result = leastsq(model, guessvector)
-    bettervector = result[0]
-    print(model.get_score())
-    plt.clf()
-    model.plot("after 1", truth=trueimage)
-    plt.savefig("whatev2.png")
-
-    # try optimization again
-    guessvector = bettervector.copy()
-    result = leastsq(model, guessvector)
-    bettervector = result[0]
-    print(model.get_score())
-    plt.clf()
-    model.plot("after 2", truth=trueimage)
-    plt.savefig("whatev3.png")
+    for ii in range(8):
+        jj = ii + 1
+        result = leastsq(model, guessvector)
+        bettervector = result[0]
+        print(jj, model.get_score())
+        plt.clf()
+        model.plot("after {jj:1d}".format(jj=jj), truth=trueimage)
+        plt.savefig("whatev{jj:1d}.png".format(jj=jj))
