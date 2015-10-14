@@ -54,7 +54,10 @@ class pharetModel:
     def get_data_residual(self):
         return self.get_squared_norm_ft_image() - self.get_data()
 
-    def get_score(self):
+    def get_score_L1(self):
+        return np.sum(np.abs(self.get_data_residual()))
+
+    def get_score_L2(self):
         return np.sum(((self.get_data_residual()).real) ** 2)
 
     def plot(self, title, truth=None):
@@ -69,7 +72,9 @@ class pharetModel:
             plt.title("truth")
         plt.subplot(2,2,1)
         plt.imshow(self.get_real_image(), **kwargs)
-        plt.title("{title}: score {s:.1f}".format(title=title, s=self.get_score()))
+        plt.title("{title}: scores {s1:.1f} {s2:.1f}".format(title=title,
+                                                             s1=self.get_score_L1(),
+                                                             s2=self.get_score_L2()))
         kwargs["vmin"] = np.log(np.percentile(self.get_data(), 1.))
         kwargs["vmax"] = np.log(np.percentile(self.get_data(), 99.))
         plt.subplot(2,2,4)
@@ -89,12 +94,18 @@ class pharetModel:
                                                        self.imageshape[1] - 2 * pp))
         self.set_real_image(image)
 
-    def __call__(self, vector):
+    def __call__(self, vector, output):
         self.set_real_image_from_vector(vector)
-        return self.get_data_residual().flatten()
+        if output == "resid":
+            return self.get_data_residual().flatten()
+        if output == "L1":
+            return self.get_score_L1()
+        if output == "L2":
+            return self.get_score_L2()
+        assert False
 
 if __name__ == "__main__":
-    from scipy.optimize import leastsq
+    from scipy.optimize import leastsq, minimize
 
     # make fake data
     np.random.seed(42)
@@ -121,7 +132,7 @@ if __name__ == "__main__":
     # construct and test class
     model = pharetModel(data, shape, padding)
     model.set_real_image(trueimage)
-    print(model.get_score())
+    print(model.get_score_L1(), model.get_score_L2())
 
     # distort image
     guessimage = trueimage + 0.1 * np.random.normal(size=shape)
@@ -129,17 +140,41 @@ if __name__ == "__main__":
     guessvector = np.log(guessimage.flatten())
     model.set_real_image_from_vector(guessvector)
     jj = 0
-    print(jj, model.get_score())
+    print(jj, model.get_score_L1(), model.get_score_L2())
     plt.clf()
     model.plot("before", truth=trueimage)
     plt.savefig("whatev{jj:1d}.png".format(jj=jj))
 
-    # try optimization
-    for ii in range(8):
+    # try optimization by a schedule of minimizers
+    method = "Powell"
+    maxfev = 200000
+    for ii in range(5):
         jj = ii + 1
-        result = leastsq(model, guessvector)
+
+        # first levmar
+        result = leastsq(model, guessvector, args=("resid", ), maxfev=maxfev)
         bettervector = result[0]
-        print(jj, model.get_score())
+        model.set_real_image_from_vector(bettervector)
+        print(jj, model.get_score_L1(), model.get_score_L2())
+        guessvector = bettervector.copy()
+
+        # second L1 minimization
+        result = minimize(model, guessvector, args=("L1", ), method=method,
+                          options={"maxfev" : maxfev})
+        bettervector = result["x"]
+        model.set_real_image_from_vector(bettervector)
+        print(jj, model.get_score_L1(), model.get_score_L2())
+        guessvector = bettervector.copy()
+
+        # third L2 minimization
+        result = minimize(model, guessvector, args=("L2", ), method=method,
+                          options={"maxfev" : maxfev})
+        bettervector = result["x"]
+        model.set_real_image_from_vector(bettervector)
+        print(jj, model.get_score_L1(), model.get_score_L2())
+        guessvector = bettervector.copy()
+
+        # make plots
         plt.clf()
-        model.plot("after {jj:1d}".format(jj=jj), truth=trueimage)
-        plt.savefig("whatev{jj:1d}.png".format(jj=jj))
+        model.plot("after {jj:02d}".format(jj=jj), truth=trueimage)
+        plt.savefig("whatev{jj:02d}.png".format(jj=jj))
