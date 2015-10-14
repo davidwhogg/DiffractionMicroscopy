@@ -29,6 +29,16 @@ class pharetModel:
         self.image = image
         self.ft = None
 
+    def set_real_image_from_vector(self, vector):
+        """
+        Note zero-padding insanity
+        """
+        pp = self.padding
+        image = np.zeros(self.imageshape)
+        image[pp:-pp,pp:-pp] = np.exp(vector).reshape((self.imageshape[0] - 2 * pp,
+                                                       self.imageshape[1] - 2 * pp))
+        self.set_real_image(image)
+
     def set_ft_image(self, ft):
         assert self.datashape == ft.shape
         self.ft = ft
@@ -41,6 +51,13 @@ class pharetModel:
         if self.image is None:
             self.image = irfftn(self.ft, self.imageshape)
         return self.image
+
+    def get_real_image_vector(self):
+        """
+        Note zero-padding insanity
+        """
+        pp = self.padding
+        return np.log(self.get_real_image()[pp:-pp,pp:-pp]).flatten()
 
     def get_ft_image(self):
         if self.ft is None:
@@ -59,6 +76,25 @@ class pharetModel:
 
     def get_score_L2(self):
         return np.sum(((self.get_data_residual()).real) ** 2)
+
+    def do_one_crazy_map(self, tiny=1.e-5):
+        """
+        Do one iteration of the solution map of Magland et al.
+        """
+        # fix squared norm
+        newft = self.get_ft_image() \
+            * np.sqrt(self.get_data() / self.get_squared_norm_ft_image())
+        self.set_ft_image(newft)
+        image = self.get_real_image()
+        # zero out borders
+        pp = self.padding
+        image[:pp,:] = 0.
+        image[:,:pp] = 0.
+        image[-pp:,:] = 0.
+        image[:,-pp:] = 0.
+        # clip negatives
+        image = np.clip(image, tiny * np.max(image), np.Inf)
+        self.set_real_image(image)
 
     def plot(self, title, truth=None):
         kwargs = {"interpolation": "nearest",
@@ -83,16 +119,6 @@ class pharetModel:
         plt.subplot(2,2,2)
         plt.title(title)
         plt.imshow(np.log(self.get_squared_norm_ft_image()), **kwargs)
-
-    def set_real_image_from_vector(self, vector):
-        """
-        Note zero-padding insanity
-        """
-        pp = self.padding
-        image = np.zeros(self.imageshape)
-        image[pp:-pp,pp:-pp] = np.exp(vector).reshape((self.imageshape[0] - 2 * pp,
-                                                       self.imageshape[1] - 2 * pp))
-        self.set_real_image(image)
 
     def __call__(self, vector, output):
         self.set_real_image_from_vector(vector)
@@ -147,32 +173,41 @@ if __name__ == "__main__":
 
     # try optimization by a schedule of minimizers
     method = "Powell"
-    maxfev = 200000
+    maxfev = 100000
+    bettervector = guessvector.copy()
     for ii in range(5):
         jj = ii + 1
 
+        # zeroth crazy map
+        for qq in range(100):
+            guessvector = bettervector.copy()
+            model.set_real_image_from_vector(guessvector)
+            model.do_one_crazy_map()
+            bettervector = model.get_real_image_vector()
+            print(jj, model.get_score_L1(), model.get_score_L2())
+
         # first levmar
+        guessvector = bettervector.copy()
         result = leastsq(model, guessvector, args=("resid", ), maxfev=maxfev)
         bettervector = result[0]
         model.set_real_image_from_vector(bettervector)
         print(jj, model.get_score_L1(), model.get_score_L2())
-        guessvector = bettervector.copy()
 
         # second L1 minimization
+        guessvector = bettervector.copy()
         result = minimize(model, guessvector, args=("L1", ), method=method,
                           options={"maxfev" : maxfev})
         bettervector = result["x"]
         model.set_real_image_from_vector(bettervector)
         print(jj, model.get_score_L1(), model.get_score_L2())
-        guessvector = bettervector.copy()
 
         # third L2 minimization
+        guessvector = bettervector.copy()
         result = minimize(model, guessvector, args=("L2", ), method=method,
                           options={"maxfev" : maxfev})
         bettervector = result["x"]
         model.set_real_image_from_vector(bettervector)
         print(jj, model.get_score_L1(), model.get_score_L2())
-        guessvector = bettervector.copy()
 
         # make plots
         plt.clf()
