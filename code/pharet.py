@@ -174,9 +174,9 @@ if __name__ == "__main__":
 
     # try optimization by a schedule of minimizers
     method = "Powell"
-    maxfev = 50000
+    maxfev = 100000
     bettervector = guessvector.copy()
-    for ii in range(5):
+    for ii in range(10):
         jj = ii + 1
 
         if ii == 0:
@@ -199,14 +199,6 @@ if __name__ == "__main__":
         # second L1 minimization
         guessvector = bettervector.copy()
         result = minimize(model, guessvector, args=("L1", ), method=method,
-                          options={"maxfev" : maxfev})
-        bettervector = result["x"]
-        model.set_real_image_from_vector(bettervector)
-        print(jj, model.get_score_L1(), model.get_score_L2())
-
-        # third L2 minimization
-        guessvector = bettervector.copy()
-        result = minimize(model, guessvector, args=("L2", ), method=method,
                           options={"maxfev" : maxfev})
         bettervector = result["x"]
         model.set_real_image_from_vector(bettervector)
