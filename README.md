@@ -13,7 +13,7 @@ in microscopy applications.
 This project is heavily influenced by discussions with
 - Charlie Epstein (Penn)
 - Leslie Greengard (SCDA) (NYU)
-- Jeremy Magland (Penn) (SCDA)
+- Jeremy Magland (SCDA)
 
 ## License
 
