@@ -6,10 +6,11 @@ Copyright 2015 David W. Hogg (SCDA) (NYU) (MPIA).
 import numpy as np
 from numpy.fft import rfftn, irfftn, fftshift, ifftshift
 from matplotlib import pylab as plt
+import emcee
 
 class pharetModel:
 
-    def __init__(self, data, imageshape, padding):
+    def __init__(self, data, imageshape, padding, ivar=None):
         """
         Must initialize the data, and the shape of the reconstructed image.
         """
@@ -17,12 +18,18 @@ class pharetModel:
         self.imageshape = imageshape
         self.padding = padding
         self.set_data(data)
+        if ivar is not None:
+            self.set_ivar(ivar)
 
     def set_data(self, data):
         if self.datashape is None:
             self.datashape = data.shape
         assert self.datashape == data.shape
         self.data = data
+
+    def set_ivar(self, ivar):
+        assert self.datashape == ivar.shape
+        self.ivar = ivar
 
     def set_real_image(self, image):
         assert self.imageshape == image.shape
@@ -47,6 +54,9 @@ class pharetModel:
     def get_data(self):
         return self.data
 
+    def get_ivar(self):
+        return self.ivar
+
     def get_real_image(self):
         if self.image is None:
             self.image = irfftn(self.ft, self.imageshape)
@@ -70,6 +80,9 @@ class pharetModel:
 
     def get_data_residual(self):
         return self.get_squared_norm_ft_image() - self.get_data()
+
+    def get_gaussian_ln_like(self):
+        return -0.5 * np.sum(self.ivar * self.get_data_residual() ** 2)
 
     def get_score_L1(self):
         return np.sum(np.abs(self.get_data_residual()))
@@ -138,6 +151,8 @@ class pharetModel:
 
     def __call__(self, vector, output):
         self.set_real_image_from_vector(vector)
+        if output == "lnprob":
+            return self.get_gaussian_ln_like()
         if output == "resid":
             return self.get_data_residual().flatten()
         if output == "L1":
@@ -171,8 +186,29 @@ if __name__ == "__main__":
     trueft = rfftn(trueimage, shape)
     data = (trueft * trueft.conj()).real
 
+    # construct an inverse variance "noise level"
+    sigma = np.zeros_like(data) + 0.005 * np.median(data)
+    sigma2 += sigma ** 2 + (0.005 * data) ** 2
+    ivar = 1. / sigma2
+
     # construct and test class
-    model = pharetModel(data, shape, padding)
+    model = pharetModel(data, shape, padding, ivar=ivar)
+
+    # initialize emcee
+    ndim = 32 * 32
+    nwalkers = 2 * ndim + 2
+    pos0 = np.random.normal(size=(nwalkers, ndim))
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, model, args=["lnprob", ])
+    for k in np.arange(50) + 0.1:
+        sampler.reset()
+        thisivar = ivar.copy()
+        thisivar[np.where(model.get_ks() < k)] = 0.
+        model.set_ivar(thisivar)
+        pos1, prob, state = sampler.run_mcmc(pos0, 50)
+        print("{1:.2f} Mean acceptance fraction: {0:.3f}"
+              .format(np.mean(sampler.acceptance_fraction), k))
+
+if False:
     model.set_real_image(trueimage)
     print(model.get_score_L1(), model.get_score_L2())
 
@@ -186,8 +222,6 @@ if __name__ == "__main__":
     plt.clf()
     model.plot("before", truth=trueimage)
     plt.savefig("whatev{jj:1d}.png".format(jj=jj))
-
-    foo = model.get_ks()
 
     # try optimization by a schedule of minimizers
     method = "Powell"
