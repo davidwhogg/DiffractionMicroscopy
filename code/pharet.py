@@ -143,7 +143,9 @@ class pharetModel:
         kwargs["vmin"] = np.log(np.percentile(self.get_data(), 1.))
         kwargs["vmax"] = np.log(np.percentile(self.get_data(), 99.))
         plt.subplot(2,2,4)
-        plt.imshow(np.log(fftshift(self.get_data(), axes=0)), **kwargs)
+        data = np.log(self.get_data().copy())
+        data[np.where(self.get_ivar() <= 0)] = kwargs["vmin"]
+        plt.imshow(fftshift(data, axes=0), **kwargs)
         plt.title("data")
         plt.subplot(2,2,2)
         plt.title(title)
@@ -187,8 +189,8 @@ if __name__ == "__main__":
     data = (trueft * trueft.conj()).real
 
     # construct an inverse variance "noise level"
-    sigma = np.zeros_like(data) + 0.005 * np.median(data)
-    sigma2 += sigma ** 2 + (0.005 * data) ** 2
+    sigma = np.zeros_like(data) + 0.05 * np.median(data)
+    sigma2 += sigma ** 2 + (0.05 * data) ** 2
     ivar = 1. / sigma2
 
     # construct and test class
@@ -199,14 +201,21 @@ if __name__ == "__main__":
     nwalkers = 2 * ndim + 2
     pos = np.random.normal(size=(nwalkers, ndim))
     sampler = emcee.EnsembleSampler(nwalkers, ndim, model, args=["lnprob", ])
-    for k in np.arange(50) + 0.1:
+    jj = 0
+    for k in np.arange(64) + 0.1:
         sampler.reset()
         thisivar = ivar.copy()
         thisivar[np.where(model.get_ks() > k)] = 0.
         model.set_ivar(thisivar)
-        pos, prob, state = sampler.run_mcmc(pos, 50)
+        pos, prob, state = sampler.run_mcmc(pos, 128)
         print("{1:.2f} Mean acceptance fraction: {0:.3f}"
               .format(np.mean(sampler.acceptance_fraction), k))
+        for mm in range(3):
+            model.set_real_image_from_vector(pos[mm])
+            plt.clf()
+            model.plot("before", truth=trueimage)
+            plt.savefig("whatev{jj:03d}.png".format(jj=jj))
+            jj += 1
 
 if False:
     model.set_real_image(trueimage)
