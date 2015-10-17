@@ -197,14 +197,14 @@ if __name__ == "__main__":
     # initialize emcee
     ndim = 32 * 32
     nwalkers = 2 * ndim + 2
-    pos0 = np.random.normal(size=(nwalkers, ndim))
+    pos = np.random.normal(size=(nwalkers, ndim))
     sampler = emcee.EnsembleSampler(nwalkers, ndim, model, args=["lnprob", ])
     for k in np.arange(50) + 0.1:
         sampler.reset()
         thisivar = ivar.copy()
         thisivar[np.where(model.get_ks() > k)] = 0.
         model.set_ivar(thisivar)
-        pos1, prob, state = sampler.run_mcmc(pos0, 50)
+        pos, prob, state = sampler.run_mcmc(pos, 50)
         print("{1:.2f} Mean acceptance fraction: {0:.3f}"
               .format(np.mean(sampler.acceptance_fraction), k))
 
