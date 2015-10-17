@@ -202,7 +202,7 @@ if __name__ == "__main__":
     for k in np.arange(50) + 0.1:
         sampler.reset()
         thisivar = ivar.copy()
-        thisivar[np.where(model.get_ks() < k)] = 0.
+        thisivar[np.where(model.get_ks() > k)] = 0.
         model.set_ivar(thisivar)
         pos1, prob, state = sampler.run_mcmc(pos0, 50)
         print("{1:.2f} Mean acceptance fraction: {0:.3f}"
