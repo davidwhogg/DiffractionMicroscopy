@@ -4,7 +4,7 @@ Copyright 2015 David W. Hogg (SCDA) (NYU) (MPIA).
 """
 
 import numpy as np
-from numpy.fft import rfftn, irfftn
+from numpy.fft import rfftn, irfftn, fftshift, ifftshift
 from matplotlib import pylab as plt
 
 class pharetModel:
@@ -97,6 +97,21 @@ class pharetModel:
         newimage = np.clip(newimage, tiny * np.max(newimage), np.Inf)
         self.set_real_image(2. * newimage / 3. + oldimage / 3.)
 
+    def get_ks(self):
+        """
+        Get k magnitude for every fft / data pixel.
+
+        ## bugs:
+        - brittle and untested
+        """
+        n0 = self.datashape[0]
+        x0 = ifftshift(np.arange(n0) - np.floor(n0 / 2))
+        x = []
+        for nd in self.datashape[-1:0:-1]:
+            x.append(np.arange(nd))
+        x.append(x0)
+        return np.sqrt(np.sum(np.array(np.meshgrid(*x)) ** 2, axis=0))
+
     def plot(self, title, truth=None):
         kwargs = {"interpolation": "nearest",
                   "origin": "lower",
@@ -115,11 +130,11 @@ class pharetModel:
         kwargs["vmin"] = np.log(np.percentile(self.get_data(), 1.))
         kwargs["vmax"] = np.log(np.percentile(self.get_data(), 99.))
         plt.subplot(2,2,4)
-        plt.imshow(np.log(self.get_data()), **kwargs)
+        plt.imshow(np.log(fftshift(self.get_data(), axes=0)), **kwargs)
         plt.title("data")
         plt.subplot(2,2,2)
         plt.title(title)
-        plt.imshow(np.log(self.get_squared_norm_ft_image()), **kwargs)
+        plt.imshow(np.log(fftshift(self.get_squared_norm_ft_image(), axes=0)), **kwargs)
 
     def __call__(self, vector, output):
         self.set_real_image_from_vector(vector)
@@ -171,6 +186,8 @@ if __name__ == "__main__":
     plt.clf()
     model.plot("before", truth=trueimage)
     plt.savefig("whatev{jj:1d}.png".format(jj=jj))
+
+    foo = model.get_ks()
 
     # try optimization by a schedule of minimizers
     method = "Powell"
