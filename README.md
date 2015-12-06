@@ -34,3 +34,11 @@ inferring a function from an **observation of its auto-correlation**.
 - We will concentrate on methods that involve
 either explicit **optimization of a justified objective function**
 or else some kind of probabilistic inference.
+
+## Projects
+
+- **Simulated annealing:**  This is probably not a good idea!
+- **Aligning noisy two-dimensional slices** of the Fourier Transoform:
+In some experiments, the data is taken in many short (and hence noisy)
+exposures, and the sample orientation is not known for any of the
+exposures.  Can these data oriented and combined accurately?
