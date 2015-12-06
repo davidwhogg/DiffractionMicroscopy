@@ -1,6 +1,8 @@
 """
 This file is part of the PhaseRetrieval project.
 Copyright 2015 David W. Hogg (SCDA) (NYU) (MPIA).
+
+The approach taken here is IDIOTIC.  Don't take any ideas from this!
 """
 
 import numpy as np
