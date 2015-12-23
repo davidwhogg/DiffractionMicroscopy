@@ -5,7 +5,7 @@
 % ----------
 % - merge in abstract from blindunslice.tex
 % - merge in references from blindunslice.tex
-% - INVERSE VARIANCES NOT VARIANCES GET HIT WITH THE PROJECTORS
+% - perhaps re-phrase everything in terms of INVERSE variance?
 
 % Style notes
 % -----------
@@ -102,9 +102,9 @@ None of the projection directions $\zhat_n$ or 2-d rotations are
 known; only the noisy images are given.
 
 The variance tensor of the 2-d Gaussian blob appearing in image $y_n$
-is given by a slice and rotation of the 3-d variance tensor:
+is given by a slice and rotation of the 3-d inverse-variance tensor:
 \begin{eqnarray}
-  V_n &=& P_n\transpose\cdot V\cdot P_n
+  V_n &=& [P_n\transpose\cdot V^{-1}\cdot P_n]^{-1}
   \quad ,
 \end{eqnarray}
 where $P_n$ is a $3\times 2$ rectangular projection matrix, that
