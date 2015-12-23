@@ -175,7 +175,7 @@ of a Gaussian pdf is proportional to a Gaussian pdf with half the variance.
 In the dense-image-of-small-pixels limit, this can be re-written as a
 sum over photons, or...
 \begin{eqnarray}
-  \ln p(y_n\given P_n,V) &=& \sum_{k=1}^{K_n} p(y_{nk}\given P_n,V)
+  \ln p(y_n\given P_n,V) &=& \sum_{k=1}^{K_n} \ln p(y_{nk}\given P_n,V)
   \\
   \ln p(y_{nk}\given P_n,V) &=& \ln \normal(\xi_{nk}\given 0,\frac{1}{2}\,V_n) + \mbox{const}
   \quad.
