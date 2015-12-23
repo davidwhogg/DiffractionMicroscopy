@@ -8,7 +8,7 @@
 % -----------
 
 \documentclass[12pt]{article}
-\usepackage{url}
+\usepackage{amssymb, mathrsfs, url}
 \input{vc}
 
 % useless formatting
@@ -17,7 +17,10 @@
 \setlength{\parskip}{0ex}
 
 % math definitions
-\newcommand{\normal}{N}
+\newcommand{\normal}{\mathscr{N}}
+\newcommand{\Poisson}{\mathscr{P}}
+\newcommand{\ft}[1]{\tilde{#1}}
+\newcommand{\sqnorm}[1]{|{#1}|^2}
 \newcommand{\unitvec}[1]{\hat{#1}}
 \newcommand{\ehat}{\unitvec{e}}
 \newcommand{\xhat}{\unitvec{x}}
@@ -32,8 +35,9 @@
 
 \begin{document}\sloppy\sloppypar
 
-\section*{Inferring a 3-d Fourier transform squared norm \\
-          from slices taken at unknown Euler angles}
+\section*{\raggedright%
+  Inferring the squared norm of a three-dimensional Fourier transform,
+  from slices taken at unknown Euler angles: The Gaussian case}
 \noindent
 David W. Hogg (NYU) (SCDA) (MPIA)
 
@@ -42,23 +46,26 @@ David W. Hogg (NYU) (SCDA) (MPIA)
 \section{Problem statement}
 
 In a three-dimensional (3-d) space there exists a 3-d multivariate
-Gaussian-shaped density blob $\rho(x)$
+Gaussian-shaped density blob $\rho(x)$.
+It's Fourier transform $\ft{\rho}(k)$ in 3-d reciprocal space $k$ will
+also be a Gaussian-shaped density blob.
 \begin{eqnarray}
-  \rho(x) &=& a\,\normal(x\given 0, V)
+  \ft{\rho}(k) &=& a\,\normal(k\given 0, V)
   \quad ,
 \end{eqnarray}
-where $a$ is an amplitude and $\normal(x\given\mu, V)$ is a Gaussian
-pdf for $x$ with mean $\mu$ and variance tensor $V$.
-Without loss of generality we have presumed zero mean $\mu$, and a
-variance tensor $V$ with principal axes aligned with the coordinate
-axes $\ehat_1$, $\ehat_2$, and $\ehat_3$ directions:
+where $a$ is some kind of amplitude and $\normal(k\given\mu, V)$ is a
+Gaussian pdf for $k$ with 3-vector mean $\mu$ and $3\times 3$ variance
+tensor $V$.
+Without loss of generality we are going to presume a variance tensor
+$V$ with principal axes aligned with the coordinate axes $\ehat_1$,
+$\ehat_2$, and $\ehat_3$ directions:
 \begin{eqnarray}
   V &=& \sum_{d=1}^3 \sigma^2_d \, \ehat_d\cdot\ehat_d\transpose
   \quad ,
 \end{eqnarray}
 where $V$ is a symmetric $3\times3$ tensor, the vectors are column
 orthonormal unit vectors (so the vector products
-$\ehat_d\cdot\ehat_d\transpose$ are outer products), the $V_d$ are
+$\ehat_d\cdot\ehat_d\transpose$ are outer products), the $\sigma^2_d$ are
 scalar eigenvalues (principal variances).
 Still without loss of generality we can assume that the corresponding
 eigenvalues of the tensor are ordered
@@ -66,83 +73,85 @@ eigenvalues of the tensor are ordered
   \sigma^2_1 \geq \sigma^2_2 \geq \sigma^2_3 > 0
   \quad .
 \end{eqnarray}
+Just as a reminder, the eigenvalues $\sigma^2_d$ have dimensions of
+inverse length squared, since they are $k$-space variances.
 
 We don't get to observe this Gaussian blob or its variance tensor
 directly.
 Instead, we get $N$ two-dimensional (2-d) images $y_n$, each of which
-contains a noisy 2-d projection of the 3-d Gaussian blob,
-projected along an unknown three-vector direction $\zhat_n$.
-In detail, each image $y_n$ is a square array of $M$ pixels at integer
-coordinates $\xi_m$ in the projection plane, and each image pixel $m$
-contains an evaluation of a shifted (that is, non-zero mean),
-arbitrarily rotated (in 2-d), 2-d Gaussian blob plus some additive iid
-Gaussian noise.
-None of the projection directions $\zhat_n$, the 2-d rotations, and
-the 2-d shifts are known; only the noisy images are given.
+contains a noisy 2-d slice of the 3-d Gaussian blob, along an unknown
+slice plane.
+In the small-angle limit of diffraction imaging, this slice is along a
+plane perpendicular to the illumination direction $\hat{z}$.
+In full generality, this slice is along a Ewald sphere that kisses
+that perpendicular plane.
+Let's start in the small-angle limit, to keep things simple.
+
+In detail, when we take the small-angle limit, we can think of each
+image $y_n$ as being an array of $M$ pixels at
+2-vector coordinates $\xi_m$ in the slice plane.
+Each image pixel $m$ contains a number of photons that can be thought
+of as a Poisson draw with expectation set by the evaluation of the
+squared norm $\sqnorm{\ft{\rho}(k)}$ of the three-dimensional Gaussian
+blob, restricted to the $\hat{z}$ slice, arbitrarily rotated (in 2-d).
+(Actually, in detail, each pixel has expectation set by an
+\emph{integral} of the squared norm of the blob, over the surface of
+the pixel; we will ignore this integral for now, and just evaluate.)
+None of the projection directions $\zhat_n$ or 2-d rotations are
+known; only the noisy images are given.
 
 The variance tensor of the 2-d Gaussian blob appearing in image $y_n$
-is given by the projection of the 3-d variance tensor:
+is given by a slice and rotation of the 3-d variance tensor:
 \begin{eqnarray}
   V_n &=& P_n\transpose\cdot V\cdot P_n
   \quad ,
 \end{eqnarray}
-where $P_n$ is a $3\times 2$ rectangular projection matrix.
-The projection matrices $P_n$ have three degrees of freedom or three
+where $P_n$ is a $3\times 2$ rectangular projection matrix, that
+performs the slice and rotation.
+Each projection matrix $P_n$ have three degrees of freedom or three
 parameters (in some sense), which can be thought of as the Euler
 angles, which are two angles on the sphere to define the direction of
 $\zhat_n$ and one more angle to define the direction of the x-axis of
 the image in the projection plane.
+
 DWH: INSERT MATH HERE.
 
 DWH: SHOW EXAMPLE DATA HERE.
 
 The question is:
 Given these data, \emph{can we infer the 3-d variance tensor $V$?}
-And if we can, how accurately, and what does it depend on?
-We are going to attempt the inference by maximizing a marginalized
-likelihood, marginalizing out all $5\,N$ unknown projection, rotation,
-and shift parameters.
+And if we can, how accurately, and what does it depend on?  We are
+going to attempt the inference by maximizing a marginalized
+likelihood, marginalizing out all $3\,N$ unknown projection and
+rotation parameters.
 
-There is another similar problem we could pose in which each datum
-$y_n$ is a \emph{sampling} from a two-dimensional projection of the
-Gaussian blob, possibly also with a uniform background (dc) component.
-That's beyond our current scope!
+\section{Marginalized likelihood}
 
-\section{Marginalized likelihood and sampling}
-
-The likelihood we are going to use is based on the image formation
-model
+Our single-pixel likelihood will be based on the Poisson process:
 \begin{eqnarray}
-  y_{nm} &=& a\,\normal(\xi_m\given\mu_n,V_n) + \sigma\,g_{nm}
+  p(y_{nm}\given P_n,V) &=& \Poisson(y_{nm}\given\lambda_{nm})
+  \\
+  \lambda_{nm} &=& \sqnorm{a\,\normal(\xi_m\given 0,V_n)}\,\Delta_m
+  \\
+  \Poisson(k\given\lambda) &=& \frac{\lambda^k\,e^{-\lambda}}{k!}
   \quad,
 \end{eqnarray}
-where $y_{nm}$ is the $m$th pixel of image $y_n$,
-$a$ is the overall amplitude of the 3-d Gaussian blob,
-$\xi_m$ is the 2-d vector location of pixel $m$,
-$\mu_n$ is the 2-d shift or center of the projected Gaussian blob,
-$V_n$ is the projected 2-d variance tensor,
-$\sigma$ is the amplitude of the iid noise,
-and $g_{nm}$ is a draw from a univariate Gaussian of zero mean and unit variance.
-(Apologies for overloading the $\sigma$ variable.
-Alternate suggestions welcome.)
-This image formation model implies this (unmarginalized)
-log-likelihood (dropping an additive constant):
-\begin{eqnarray}
-  -2\,\ln\like(a,V,\setof{\phi_n}_{n=1}^N) &=& \sum_{n=1}^N \sum_{m=1}^M \frac{[y_{nm} - Y_{nm}]^2}{\sigma^2}
-  \\
-  Y_{nm} &\equiv& a\,\normal(\xi_m\given\mu_n,V_n)
-  \\
-  V_n &\equiv& P_n\transpose\cdot V\cdot P_n
-  \\
-  \phi_n &\equiv& \setof{P_n, \mu_n}
-  \quad,
-\end{eqnarray}
-where the (unmarginalized) likelihood depends on the 3-d parameters
-$\setof{a,V}$ (4 degrees of freedom) and also the projection
-parameters $\setof{\phi_n}_{n=1}^N$ ($5\,N$ degrees of freedom).
+where $y_{nm}$ is the $m$th pixel value in image $y_n$,
+$\lambda_{nm}$ is the evaluation of the squared norm of the Fourier
+transform at the pixel center (just evaluation, not integral),
+$\Delta_m$ is the effective $k$-space area of the $m$th pixel,
+and $\Poisson(k\given\lambda)$ is the Poisson probability.
+The likelihood is a function of the projections $P_n$ and the
+three-space tensor $V$, through their combination $V_n$.
 
-Now what we really want is to marginalize out the projections and
-offsets.
+DWH: If we drop (don't infer) normalizations, then this leads to a
+log-likelihood...
+
+DWH: Now what we really want is to marginalize out the projections and
+offsets...
+
+\end{document}
+
 The marginalized log-likelihood (again, dropping a constant) looks like
 \begin{eqnarray}
   -2\,\ln\like(a,V) &=& -2\,\sum_{n=1}^N\ln\int\exp(-\frac{1}{2}\,\sum_{m=1}^M \frac{[y_{nm} - Y_{nm}]^2}{\sigma^2})\,p(\phi_n)\,\dd\phi_n
