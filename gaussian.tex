@@ -1,0 +1,204 @@
+%% This file is part of the DiffractionMicroscopy project
+%% Copyright 2015 David W. Hogg
+
+% To-Do list
+% ----------
+
+% Style notes
+% -----------
+
+\documentclass[12pt]{article}
+\usepackage{url}
+\input{vc}
+
+% useless formatting
+\linespread{1.08333} % 10/13 spacing
+\setlength{\parindent}{2\baselineskip}\addtolength{\parindent}{-1.25ex}
+\setlength{\parskip}{0ex}
+
+% math definitions
+\newcommand{\normal}{N}
+\newcommand{\unitvec}[1]{\hat{#1}}
+\newcommand{\ehat}{\unitvec{e}}
+\newcommand{\xhat}{\unitvec{x}}
+\newcommand{\yhat}{\unitvec{y}}
+\newcommand{\zhat}{\unitvec{z}}
+\newcommand{\transpose}{^{\mathsf{T}}}
+\newcommand{\inverse}{^{-1}}
+\newcommand{\given}{\,|\,}
+\newcommand{\like}{L}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\dd}{\mathrm{d}}
+
+\begin{document}\sloppy\sloppypar
+
+\section*{Inferring a 3-d Fourier transform squared norm \\
+          from slices taken at unknown Euler angles}
+\noindent
+David W. Hogg (NYU) (SCDA) (MPIA)
+
+\bigskip
+
+\section{Problem statement}
+
+In a three-dimensional (3-d) space there exists a 3-d multivariate
+Gaussian-shaped density blob $\rho(x)$
+\begin{eqnarray}
+  \rho(x) &=& a\,\normal(x\given 0, V)
+  \quad ,
+\end{eqnarray}
+where $a$ is an amplitude and $\normal(x\given\mu, V)$ is a Gaussian
+pdf for $x$ with mean $\mu$ and variance tensor $V$.
+Without loss of generality we have presumed zero mean $\mu$, and a
+variance tensor $V$ with principal axes aligned with the coordinate
+axes $\ehat_1$, $\ehat_2$, and $\ehat_3$ directions:
+\begin{eqnarray}
+  V &=& \sum_{d=1}^3 \sigma^2_d \, \ehat_d\cdot\ehat_d\transpose
+  \quad ,
+\end{eqnarray}
+where $V$ is a symmetric $3\times3$ tensor, the vectors are column
+orthonormal unit vectors (so the vector products
+$\ehat_d\cdot\ehat_d\transpose$ are outer products), the $V_d$ are
+scalar eigenvalues (principal variances).
+Still without loss of generality we can assume that the corresponding
+eigenvalues of the tensor are ordered
+\begin{eqnarray}
+  \sigma^2_1 \geq \sigma^2_2 \geq \sigma^2_3 > 0
+  \quad .
+\end{eqnarray}
+
+We don't get to observe this Gaussian blob or its variance tensor
+directly.
+Instead, we get $N$ two-dimensional (2-d) images $y_n$, each of which
+contains a noisy 2-d projection of the 3-d Gaussian blob,
+projected along an unknown three-vector direction $\zhat_n$.
+In detail, each image $y_n$ is a square array of $M$ pixels at integer
+coordinates $\xi_m$ in the projection plane, and each image pixel $m$
+contains an evaluation of a shifted (that is, non-zero mean),
+arbitrarily rotated (in 2-d), 2-d Gaussian blob plus some additive iid
+Gaussian noise.
+None of the projection directions $\zhat_n$, the 2-d rotations, and
+the 2-d shifts are known; only the noisy images are given.
+
+The variance tensor of the 2-d Gaussian blob appearing in image $y_n$
+is given by the projection of the 3-d variance tensor:
+\begin{eqnarray}
+  V_n &=& P_n\transpose\cdot V\cdot P_n
+  \quad ,
+\end{eqnarray}
+where $P_n$ is a $3\times 2$ rectangular projection matrix.
+The projection matrices $P_n$ have three degrees of freedom or three
+parameters (in some sense), which can be thought of as the Euler
+angles, which are two angles on the sphere to define the direction of
+$\zhat_n$ and one more angle to define the direction of the x-axis of
+the image in the projection plane.
+DWH: INSERT MATH HERE.
+
+DWH: SHOW EXAMPLE DATA HERE.
+
+The question is:
+Given these data, \emph{can we infer the 3-d variance tensor $V$?}
+And if we can, how accurately, and what does it depend on?
+We are going to attempt the inference by maximizing a marginalized
+likelihood, marginalizing out all $5\,N$ unknown projection, rotation,
+and shift parameters.
+
+There is another similar problem we could pose in which each datum
+$y_n$ is a \emph{sampling} from a two-dimensional projection of the
+Gaussian blob, possibly also with a uniform background (dc) component.
+That's beyond our current scope!
+
+\section{Marginalized likelihood and sampling}
+
+The likelihood we are going to use is based on the image formation
+model
+\begin{eqnarray}
+  y_{nm} &=& a\,\normal(\xi_m\given\mu_n,V_n) + \sigma\,g_{nm}
+  \quad,
+\end{eqnarray}
+where $y_{nm}$ is the $m$th pixel of image $y_n$,
+$a$ is the overall amplitude of the 3-d Gaussian blob,
+$\xi_m$ is the 2-d vector location of pixel $m$,
+$\mu_n$ is the 2-d shift or center of the projected Gaussian blob,
+$V_n$ is the projected 2-d variance tensor,
+$\sigma$ is the amplitude of the iid noise,
+and $g_{nm}$ is a draw from a univariate Gaussian of zero mean and unit variance.
+(Apologies for overloading the $\sigma$ variable.
+Alternate suggestions welcome.)
+This image formation model implies this (unmarginalized)
+log-likelihood (dropping an additive constant):
+\begin{eqnarray}
+  -2\,\ln\like(a,V,\setof{\phi_n}_{n=1}^N) &=& \sum_{n=1}^N \sum_{m=1}^M \frac{[y_{nm} - Y_{nm}]^2}{\sigma^2}
+  \\
+  Y_{nm} &\equiv& a\,\normal(\xi_m\given\mu_n,V_n)
+  \\
+  V_n &\equiv& P_n\transpose\cdot V\cdot P_n
+  \\
+  \phi_n &\equiv& \setof{P_n, \mu_n}
+  \quad,
+\end{eqnarray}
+where the (unmarginalized) likelihood depends on the 3-d parameters
+$\setof{a,V}$ (4 degrees of freedom) and also the projection
+parameters $\setof{\phi_n}_{n=1}^N$ ($5\,N$ degrees of freedom).
+
+Now what we really want is to marginalize out the projections and
+offsets.
+The marginalized log-likelihood (again, dropping a constant) looks like
+\begin{eqnarray}
+  -2\,\ln\like(a,V) &=& -2\,\sum_{n=1}^N\ln\int\exp(-\frac{1}{2}\,\sum_{m=1}^M \frac{[y_{nm} - Y_{nm}]^2}{\sigma^2})\,p(\phi_n)\,\dd\phi_n
+  \quad,
+\end{eqnarray}
+where $p(\phi)$ is the prior over the 5 nuisance parameters for any
+individual datum, and the likelihood is now a function only of
+$\setof{a,V}$ because we have marginalized out all $5\,N$ nuisance
+parameters.
+Note that this horror is a log of an integral of an exponential of
+something simple.
+That's going to hurt (and going to suggest to our competitors to use
+E-M, but we won't be so weak).
+The prior $p(\phi)$ over nuisance parameters will be isotropic in
+projection angles, isotropic in rotations in the 2-d space, and
+uninformative---somehow---in offsets.
+
+Imagine we had a large, dense, fair set of $K$ samples
+$\phi_k\equiv\setof{P_k, \mu_k}$ from the prior $p(\phi)$ over
+nuisance parameters.
+Then we could approximate the marginalization integrals with sums, and
+obtain (once again dropping a constant)
+\begin{eqnarray}
+  -2\,\ln\like(a,V) &\approx& -2\,\sum_{n=1}^N\ln\frac{1}{K}\,\sum_{k=1}^K\exp(-\frac{1}{2}\,\sum_{m=1}^M \frac{[y_{nm} - Y_{km}]^2}{\sigma^2})
+  \\
+  Y_{km} &\equiv& a\,\normal(\xi_m\given\mu_k,V_k)
+  \\
+  V_k &\equiv& P_k\transpose\cdot V\cdot P_k
+  \quad,
+\end{eqnarray}
+where now the logsumexp has reared its head.
+
+DWH: Now notice that we don't need the full set of samples to
+approximate this integral well.
+
+\section{Method and implementation}
+
+DWH: To make fake data, we do the following...
+
+DWH: How to re-sample from the prior, cleanly?  Or burn in?  Or whatever.
+
+DWH: Do we have to re-sample from the full prior, or can we sample in
+a neighborhood?  IF the latter, how do we figure out whether our
+neighborhood was big enough?
+
+DWH: How to initialize?
+
+\section{Experiments}
+
+\section{Discussion}
+
+
+\bigskip
+
+Everything in this project, including this document itself, is
+available at \giturl.  If you want this exact version, clone at git
+hash \texttt{\githash~(\gitdate)}.
+
+\end{document}
