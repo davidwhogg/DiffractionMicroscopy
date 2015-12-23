@@ -26,18 +26,25 @@ def make_random_projection_matrices(N):
     return Ps
 
 def make_projected_ivars(ivars, Ps):
+    """
+    Hard-coded for speed.
+    """
     assert ivars.shape == (3, )
     T, two, three = Ps.shape
     assert two == 2
     assert three == 3
     ivarns = np.zeros((T, 2, 2))
     ivarns[:, 0, 0] = np.sum(Ps[:,0,:] * ivars[None,None,:] * Ps[:,0,:], axis=2)
-    ivarns[:, 0, 1] = np.sum(Ps[:,0,:] * ivars[None,None,:] * Ps[:,1,:], axis=2)
+    foo             = np.sum(Ps[:,0,:] * ivars[None,None,:] * Ps[:,1,:], axis=2)
+    ivarns[:, 0, 1] = foo
+    ivarns[:, 1, 0] = foo
     ivarns[:, 1, 1] = np.sum(Ps[:,1,:] * ivars[None,None,:] * Ps[:,1,:], axis=2)
-    ivarns[:, 1, 0] = ivarns[:, 0, 1]
     return ivarns
 
 def get_2d_determinants(ivarns):
+    """
+    Hard-coded for speed.
+    """
     T, two, twoo = ivarns.shape
     assert two == 2
     assert twoo == 2
@@ -70,7 +77,7 @@ def show_data(samples, prefix):
 
 def marginalized_ln_likelihood_one(ivars, datum, Ps):
     """
-    Compute the sampling approximation to the marginalized likelihod.
+    Compute the sampling approximation to the marginalized likelihood.
 
     NOT YET WRITTEN
     """
