@@ -19,7 +19,6 @@
 % math definitions
 \newcommand{\normal}{\mathscr{N}}
 \newcommand{\Poisson}{\mathscr{P}}
-\newcommand{\ft}[1]{\tilde{#1}}
 \newcommand{\sqnorm}[1]{|{#1}|^2}
 \newcommand{\unitvec}[1]{\hat{#1}}
 \newcommand{\ehat}{\unitvec{e}}
@@ -46,11 +45,11 @@ David W. Hogg (NYU) (SCDA) (MPIA)
 \section{Problem statement}
 
 In a three-dimensional (3-d) space there exists a 3-d multivariate
-Gaussian-shaped density blob $\rho(x)$.
-It's Fourier transform $\ft{\rho}(k)$ in 3-d reciprocal space $k$ will
+Gaussian-shaped density blob $f(x)$.
+It's Fourier transform $F(k)$ in 3-d reciprocal space $k$ will
 also be a Gaussian-shaped density blob.
 \begin{eqnarray}
-  \ft{\rho}(k) &=& a\,\normal(k\given 0, V)
+  F(k) &=& a\,\normal(k\given 0, V)
   \quad ,
 \end{eqnarray}
 where $a$ is some kind of amplitude and $\normal(k\given\mu, V)$ is a
@@ -79,12 +78,12 @@ inverse length squared, since they are $k$-space variances.
 We don't get to observe this Gaussian blob or its variance tensor
 directly.
 Instead, we get $N$ two-dimensional (2-d) images $y_n$, each of which
-contains a noisy 2-d slice of the 3-d Gaussian blob, along an unknown
-slice plane.
+contains a noisy 2-d slice of the 3-d Gaussian blob, through the origin
+but along an unknown slice plane.
 In the small-angle limit of diffraction imaging, this slice is along a
-plane perpendicular to the illumination direction $\hat{z}$.
+plane perpendicular to the illumination direction $\zhat$.
 In full generality, this slice is along a Ewald sphere that kisses
-that perpendicular plane.
+that perpendicular plane at the origin.
 Let's start in the small-angle limit, to keep things simple.
 
 In detail, when we take the small-angle limit, we can think of each
@@ -92,8 +91,8 @@ image $y_n$ as being an array of $M$ pixels at
 2-vector coordinates $\xi_m$ in the slice plane.
 Each image pixel $m$ contains a number of photons that can be thought
 of as a Poisson draw with expectation set by the evaluation of the
-squared norm $\sqnorm{\ft{\rho}(k)}$ of the three-dimensional Gaussian
-blob, restricted to the $\hat{z}$ slice, arbitrarily rotated (in 2-d).
+squared norm $\sqnorm{F(k)}$ of the three-dimensional Gaussian
+blob, restricted to the $\zhat$ slice, arbitrarily rotated (in 2-d).
 (Actually, in detail, each pixel has expectation set by an
 \emph{integral} of the squared norm of the blob, over the surface of
 the pixel; we will ignore this integral for now, and just evaluate.)
@@ -108,13 +107,25 @@ is given by a slice and rotation of the 3-d variance tensor:
 \end{eqnarray}
 where $P_n$ is a $3\times 2$ rectangular projection matrix, that
 performs the slice and rotation.
-Each projection matrix $P_n$ have three degrees of freedom or three
+Each rectangular projection matrix $P_n$ has three degrees of freedom or three
 parameters (in some sense), which can be thought of as the Euler
 angles, which are two angles on the sphere to define the direction of
 $\zhat_n$ and one more angle to define the direction of the x-axis of
 the image in the projection plane.
 
-DWH: INSERT MATH HERE.
+In detail, if one has the orthonormal unit 3-vectors
+$\xhat_n,\yhat_n,\zhat_n$ that define the x-direction on the image
+slice plane (but in the 3-d $k$-space), the y-direction on the image
+slice plane, and the normal to the image slice plane, the $3\times 2$
+projection matrix $P_n$ becomes
+\begin{eqnarray}
+  P_n &\equiv& [\xhat_n\,,\,\yhat_n]
+  \quad ,
+\end{eqnarray}
+which (because $\xhat_n,\yhat_n$ are 3-vectors) is a $3\times2$ matrix.
+This object $P_n$ might look like it has six parameters, but it is
+constructed from two orthonormal vectors, so it really only has three
+degrees of freedom, which correspond to the Euler angles.
 
 DWH: SHOW EXAMPLE DATA HERE.
 
@@ -131,78 +142,70 @@ Our single-pixel likelihood will be based on the Poisson process:
 \begin{eqnarray}
   p(y_{nm}\given P_n,V) &=& \Poisson(y_{nm}\given\lambda_{nm})
   \\
-  \lambda_{nm} &=& \sqnorm{a\,\normal(\xi_m\given 0,V_n)}\,\Delta_m
-  \\
-  \Poisson(k\given\lambda) &=& \frac{\lambda^k\,e^{-\lambda}}{k!}
+  \lambda_{nm} &\equiv& \sqnorm{a\,\normal(\xi_m\given 0,V_n)}\,\Delta_m
   \quad,
 \end{eqnarray}
 where $y_{nm}$ is the $m$th pixel value in image $y_n$,
 $\lambda_{nm}$ is the evaluation of the squared norm of the Fourier
 transform at the pixel center (just evaluation, not integral),
 $\Delta_m$ is the effective $k$-space area of the $m$th pixel,
-and $\Poisson(k\given\lambda)$ is the Poisson probability.
+and $\Poisson(k\given\lambda)$ is the Poisson probability for obtaining
+count $k$ given expectation $\lambda$.
 The likelihood is a function of the projections $P_n$ and the
 three-space tensor $V$, through their combination $V_n$.
 
-DWH: If we drop (don't infer) normalizations, then this leads to a
-log-likelihood...
+Amusingly, in the small-pixel limit (that is, in the limit in which
+the image plane is dense with tiny pixels), the image $y_n$ just
+becomes a photon list, containing $K_n$ photons $k$, each with
+position $\xi_{nk}$.
 
-DWH: Now what we really want is to marginalize out the projections and
-offsets...
-
-\end{document}
-
-The marginalized log-likelihood (again, dropping a constant) looks like
+If we drop (don't infer) normalizations, and presume that all pixels
+have the same effective area $\Delta_m$ in $k$-space, then this leads
+to a log-likelihood
 \begin{eqnarray}
-  -2\,\ln\like(a,V) &=& -2\,\sum_{n=1}^N\ln\int\exp(-\frac{1}{2}\,\sum_{m=1}^M \frac{[y_{nm} - Y_{nm}]^2}{\sigma^2})\,p(\phi_n)\,\dd\phi_n
+  \ln p(y_n\given P_n,V) &=& \sum_{m=1}^M \ln p(y_{nm}\given P_n,V)
+  \\
+  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln \sqnorm{\normal(\xi_m\given 0,V_n)} + \mbox{const}
+  \\
+  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln \normal(\xi_m\given 0,\frac{1}{2}\,V_n) + \mbox{const}
   \quad,
 \end{eqnarray}
-where $p(\phi)$ is the prior over the 5 nuisance parameters for any
-individual datum, and the likelihood is now a function only of
-$\setof{a,V}$ because we have marginalized out all $5\,N$ nuisance
-parameters.
-Note that this horror is a log of an integral of an exponential of
-something simple.
-That's going to hurt (and going to suggest to our competitors to use
-E-M, but we won't be so weak).
-The prior $p(\phi)$ over nuisance parameters will be isotropic in
-projection angles, isotropic in rotations in the 2-d space, and
-uninformative---somehow---in offsets.
-
-Imagine we had a large, dense, fair set of $K$ samples
-$\phi_k\equiv\setof{P_k, \mu_k}$ from the prior $p(\phi)$ over
-nuisance parameters.
-Then we could approximate the marginalization integrals with sums, and
-obtain (once again dropping a constant)
+where we are ignoring constants, and where we have used that the square
+of a Gaussian pdf is proportional to a Gaussian pdf with half the variance.
+In the dense-image-of-small-pixels limit, this can be re-written as a
+sum over photons, or...
 \begin{eqnarray}
-  -2\,\ln\like(a,V) &\approx& -2\,\sum_{n=1}^N\ln\frac{1}{K}\,\sum_{k=1}^K\exp(-\frac{1}{2}\,\sum_{m=1}^M \frac{[y_{nm} - Y_{km}]^2}{\sigma^2})
+  \ln p(y_n\given P_n,V) &=& \sum_{k=1}^{K_n} p(y_{nk}\given P_n,V)
   \\
-  Y_{km} &\equiv& a\,\normal(\xi_m\given\mu_k,V_k)
-  \\
-  V_k &\equiv& P_k\transpose\cdot V\cdot P_k
+  \ln p(y_{nk}\given P_n,V) &=& \ln \normal(\xi_{nk}\given 0,\frac{1}{2}\,V_n) + \mbox{const}
+  \quad.
+\end{eqnarray}
+
+Now what we really want is to marginalize out the projections and
+offsets.
+We are going to think of the rectangular projection matrix $P_n$ as
+being controlled by a set of Euler angles $\phi$ and we are going to
+marginalize these out, using an isotropic prior.
+\begin{eqnarray}
+  \ln p(y_n\given V) &=& \ln \int p(y_n\given P_{\phi},V)\,p(\phi)\,\dd\phi
   \quad,
 \end{eqnarray}
-where now the logsumexp has reared its head.
+where now we subscript $P_{\phi}$ with the Euler angles and integrate
+over them.
+This marginalized likelihood has the horrifying form of a log of an
+integral of an exponential of a simple log-likelihood.  That's bad.
 
-DWH: Now notice that we don't need the full set of samples to
-approximate this integral well.
-
-\section{Method and implementation}
-
-DWH: To make fake data, we do the following...
-
-DWH: How to re-sample from the prior, cleanly?  Or burn in?  Or whatever.
-
-DWH: Do we have to re-sample from the full prior, or can we sample in
-a neighborhood?  IF the latter, how do we figure out whether our
-neighborhood was big enough?
-
-DWH: How to initialize?
-
-\section{Experiments}
-
-\section{Discussion}
-
+We make things little better by replacing this integral with a
+sampling approximation.
+If we have $T$ samples $P_t$ of rectangular projection matrices, drawn
+from an isotropic distribution of Euler angles $\phi$, the
+marginalized likelihood can be approximated by
+\begin{eqnarray}
+  \ln p(y_n\given V) &=& \ln\left[\frac{1}{T}\,\sum_{t=1}^T p(y_n\given P_t,V)\right]
+  \quad,
+\end{eqnarray}
+where now we have a log-sum-exp form (since it is $\ln p(y_n\given
+P,V)$ that has the simple form).
 
 \bigskip
 
