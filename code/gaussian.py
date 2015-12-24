@@ -99,9 +99,9 @@ def marginalized_ln_likelihood(ivars, data, Ps):
     """
     assert ivars.shape == (3, )
     if np.any(ivars <= 0.):
-        return np.Inf
+        return -np.Inf
     if (ivars[0] < ivars[1]) or (ivars[1] < ivars[2]):
-        return np.Inf
+        return -np.Inf
     foo = lambda x: marginalized_ln_likelihood_one(ivars, x, Ps)
     lnlikes = np.array(list(map(foo, data)))
     print("marginalized_ln_likelihood(): returning")
@@ -111,8 +111,9 @@ if __name__ == "__main__":
     data = make_fake_data()
     show_data(data, "data_examples")
     Ps = make_random_projection_matrices(1024)
-    foo = lambda x: marginalized_ln_likelihood(x, data, Ps)
+    foo = lambda x: -1. * marginalized_ln_likelihood(x, data, Ps)
     x0 = 1. / np.array([50.,45.,40.])
     result = op.fmin_powell(foo, x0)
-    print(result[0])
-    print(1. / result[0])
+    x1 = result[0]
+    print(x1, 1. / x1)
+    print(foo(x0), foo(x1))
