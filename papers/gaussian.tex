@@ -3,8 +3,6 @@
 
 % To-Do list
 % ----------
-% - merge in abstract from blindunslice.tex
-% - merge in references from blindunslice.tex
 % - perhaps re-phrase everything in terms of INVERSE variance?
 
 % Style notes
@@ -37,12 +35,45 @@
 \begin{document}\sloppy\sloppypar
 
 \section*{\raggedright%
-  Inferring the squared norm of a three-dimensional Fourier transform,
-  from slices taken at unknown Euler angles: The Gaussian case}
+  Reconstruction of the norm of the Fourier transform,
+  from noisy slices taken at unknown Euler angles: The Gaussian case}
 \noindent
-David W. Hogg (NYU) (SCDA) (MPIA)
+David W. Hogg\\
+\textsl{Simons Center for Data Analysis, Simons Foundation}\\
+\textsl{Center for Cosmology and Particle Physics, Department of Physics, New York University}\\
+\textsl{Center for Data Science, New York University}
 
 \bigskip
+
+\paragraph{Abstract:}
+In certain kinds of diffraction-microscopy problems, the sample being
+imaged is only in the device for a short time, and at unknown
+orientation (Euler angles) relative to the beam and detector,
+leading to a noisy image of one 2-d slice
+of the squared norm of the full 3-d Fourier Transform.
+In principle, many of these noisy slice images can be combined to
+reconstruct the full 3-d function.
+However, the fact that the orientations are unknown makes this
+difficult, and perhaps impossible at some individual-image
+signal-to-noise ratios.
+Here we present a fully probabilistic approach to this problem, which
+reconstructs the full 3-d function, marginalizing out the Euler
+angles.
+We show that, in a highly restricted case, that the reconstruction can
+be performed, even when there is only \emph{one photon detected in each
+image}.
+That is, the reconstructon is possible even as the information content per
+image (slice) approaches zero.
+There are, however, requirements on the total information content in the data set,
+and on the true distribution of Euler angles.
+
+\section{Introducion}
+
+DWH: This problem, apparently, is an important problem.  State it clearly
+and cite some literature (see references below).
+
+DWH: State the basic reasoning behind the approach and why,
+counter-intuitively, it should work.
 
 \section{Problem statement}
 
@@ -214,5 +245,25 @@ P,V)$ that has the simple form).
 Everything in this project, including this document itself, is
 available at \giturl.  If you want this exact version, clone at git
 hash \texttt{\githash~(\gitdate)}.
+
+\section*{Possibly relevant literature}\raggedright
+\begin{trivlist}
+\item
+Bortel, G., Faigel, G., Tegze, M., 2009,
+Classification and averaging of random orientation single macromolecular diffraction patterns at atomic resolution,
+J Struct Biol 166(2) 226--233.
+\item
+Huldt, G., Szoke, A., Hajdu, J., 2003,
+Diffraction imaging of single particles and biomolecules,
+J Struct Biol 144(1--2) 219--227.
+\item
+Martin, A. V., 2014,
+The correlation of single-particle diffraction patterns as a continuous function of particle orientation,
+Philos Trans R Soc Lond B Biol Sci 369(1647) 20130329 doi:10.1098/rstb.2013.0329.
+\item
+Tegze, M., Bortel, G., 2012,
+Atomic structure of a single large biomolecule from diffraction patterns of random orientations,
+J Struct Biol 179(1) 41--45 doi: 10.1016/j.jsb.2012.04.014.
+\end{trivlist}
 
 \end{document}
