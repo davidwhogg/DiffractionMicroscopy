@@ -7,10 +7,12 @@ Copyright 2015 David W. Hogg (NYU).
 """
 
 import numpy as np
+import scipy.optimize as op
+from scipy.misc import logsumexp
 import pylab as plt
 
 np.random.seed(42)
-Truth = np.array([1./47., 1./13., 1./11.]) # axis-aligned inverse variances
+Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
 
 def _normalize_vectors(vecs):
     return vecs / np.sqrt(np.sum(vecs * vecs, axis=1))[:,None]
@@ -78,33 +80,39 @@ def show_data(samples, prefix):
 def marginalized_ln_likelihood_one(ivars, datum, Ps):
     """
     Compute the sampling approximation to the marginalized likelihood.
-
-    NOT YET WRITTEN
     """
-    assert ivars.shape == (3, )
     K, two = datum.shape
     assert two == 2
     T, two, three = Ps.shape
     assert two == 2
     assert three == 3
-    threevectors = np.tensordot(datum, Ps, axes=(1,1))
-    print(threevectors.shape)
-    print(K, T)
-    assert False
-    return len(datum)
+    ivarns = make_projected_ivars(ivars, Ps)
+    chisquareds = np.sum(np.sum(np.tensordot(datum, ivarns, axes=(1,1)) * datum[:,None,:],
+                                axis=2), axis=0) # should be length T
+    logdets = K * np.log(get_2d_determinants(ivarns)) # factor of K for multiplicity
+    loglikes = -0.5 * chisquareds + 0.5 * logdets # plus because INVERSE variances
+    return logsumexp(loglikes)
 
 def marginalized_ln_likelihood(ivars, data, Ps):
     """
     TOTALLY CONFUSED ABOUT WHAT map() DOES.
     """
+    assert ivars.shape == (3, )
+    if np.any(ivars <= 0.):
+        return np.Inf
+    if (ivars[0] < ivars[1]) or (ivars[1] < ivars[2]):
+        return np.Inf
     foo = lambda x: marginalized_ln_likelihood_one(ivars, x, Ps)
     lnlikes = np.array(list(map(foo, data)))
+    print("marginalized_ln_likelihood(): returning")
     return np.sum(lnlikes)
 
 if __name__ == "__main__":
     data = make_fake_data()
     show_data(data, "data_examples")
-    ivars = 1. / np.array([20.,19.,18.])
     Ps = make_random_projection_matrices(1024)
-    foo = marginalized_ln_likelihood(ivars, data, Ps)
-    print(foo)
+    foo = lambda x: marginalized_ln_likelihood(x, data, Ps)
+    x0 = 1. / np.array([50.,45.,40.])
+    result = op.fmin_powell(foo, x0)
+    print(result[0])
+    print(1. / result[0])
