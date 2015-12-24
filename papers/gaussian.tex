@@ -17,6 +17,9 @@
 \setlength{\parindent}{2\baselineskip}\addtolength{\parindent}{-1.25ex}
 \setlength{\parskip}{0ex}
 
+% text definitions
+\newcommand{\doi}[1]{\url{http://doi.org/#1}}
+
 % math definitions
 \newcommand{\normal}{\mathscr{N}}
 \newcommand{\Poisson}{\mathscr{P}}
@@ -38,10 +41,11 @@
   Reconstruction of the norm of the Fourier transform,
   from noisy slices taken at unknown Euler angles: The Gaussian case}
 \noindent
-David W. Hogg\\
-\textsl{Simons Center for Data Analysis, Simons Foundation}\\
-\textsl{Center for Cosmology and Particle Physics, Department of Physics, New York University}\\
-\textsl{Center for Data Science, New York University}
+David W. Hogg%
+\footnote{Simons Center for Data Analysis, Simons Foundation}%
+\footnote{Center for Cosmology and Particle Physics, Department of Physics, New York University}%
+\footnote{Center for Data Science, New York University}%
+\footnote{david.hogg@nyu.edu}
 
 \bigskip
 
@@ -59,7 +63,7 @@ signal-to-noise ratios.
 Here we present a fully probabilistic approach to this problem, which
 reconstructs the full 3-d function, marginalizing out the Euler
 angles.
-We show that, in a highly restricted case, that the reconstruction can
+We show that, in a highly restricted case, the reconstruction can
 be performed, even when there is only \emph{one photon detected in each
 image}.
 That is, the reconstructon is possible even as the information content per
@@ -259,11 +263,13 @@ J Struct Biol 144(1--2) 219--227.
 \item
 Martin, A. V., 2014,
 The correlation of single-particle diffraction patterns as a continuous function of particle orientation,
-Philos Trans R Soc Lond B Biol Sci 369(1647) 20130329 doi:10.1098/rstb.2013.0329.
+Philos Trans R Soc Lond B Biol Sci 369(1647) 20130329
+\doi{10.1098/rstb.2013.0329}.
 \item
 Tegze, M., Bortel, G., 2012,
 Atomic structure of a single large biomolecule from diffraction patterns of random orientations,
-J Struct Biol 179(1) 41--45 doi: 10.1016/j.jsb.2012.04.014.
+J Struct Biol 179(1) 41--45
+\doi{10.1016/j.jsb.2012.04.014}.
 \end{trivlist}
 
 \end{document}
