@@ -83,7 +83,7 @@ counter-intuitively, it should work.
 
 In a three-dimensional (3-d) space there exists a 3-d multivariate
 Gaussian-shaped density blob $f(x)$.
-It's Fourier transform $F(k)$ in 3-d reciprocal space $k$ will
+The Fourier transform $F(k)$ in 3-d reciprocal space $k$ will
 also be a Gaussian-shaped density blob.
 \begin{eqnarray}
   F(k) &=& a\,\normal(k\given 0, V)
@@ -210,7 +210,7 @@ to a log-likelihood
 where we are ignoring constants, and where we have used that the square
 of a Gaussian pdf is proportional to a Gaussian pdf with half the variance.
 In the dense-image-of-small-pixels limit, this can be re-written as a
-sum over photons, or...
+sum over photons:
 \begin{eqnarray}
   \ln p(y_n\given P_n,V) &=& \sum_{k=1}^{K_n} \ln p(y_{nk}\given P_n,V)
   \\
