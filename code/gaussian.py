@@ -2,14 +2,24 @@
 This file is part of the DiffractionMicroscopy project.
 Copyright 2015 David W. Hogg (NYU).
 
-## Comments
-- I have hard-coded some 2x2 linear algebra for speed.
+## Bugs:
+- I need to make the likelihood_one function pickleable and turn on multiprocessing.
+
+## Comments:
+- I hard-coded some 2x2 linear algebra for speed.
 """
 
 import numpy as np
 import scipy.optimize as op
 from scipy.misc import logsumexp
 import pylab as plt
+
+if False:
+    from multiprocessing import Pool
+    p = Pool(8)
+    pmap = p.map
+else:
+    pmap = map
 
 np.random.seed(42)
 Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
@@ -52,7 +62,7 @@ def get_2d_determinants(ivarns):
     assert twoo == 2
     return ivarns[:,0,0] * ivarns[:,1,1] - ivarns[:,0,1] * ivarns[:,1,0]
 
-def make_fake_data(N=2**16, K=2**4):
+def make_fake_data(N=2**15, K=2**4): # magic numbers
     """
     Every image contains exactly K photons.
     This is unrealistic, but suck it up.
@@ -77,19 +87,12 @@ def show_data(samples, prefix):
     plt.savefig(prefix+".png")
     return None
 
-def marginalized_ln_likelihood_one(ivars, datum, Ps):
+def marginalized_ln_likelihood_one(datum, ivarns, logdets):
     """
     Compute the sampling approximation to the marginalized likelihood.
     """
-    K, two = datum.shape
-    assert two == 2
-    T, two, three = Ps.shape
-    assert two == 2
-    assert three == 3
-    ivarns = make_projected_ivars(ivars, Ps)
     chisquareds = np.sum(np.sum(np.tensordot(datum, ivarns, axes=(1,1)) * datum[:,None,:],
                                 axis=2), axis=0) # should be length T
-    logdets = K * np.log(get_2d_determinants(ivarns)) # factor of K for multiplicity
     loglikes = -0.5 * chisquareds + 0.5 * logdets # plus because INVERSE variances
     return logsumexp(loglikes)
 
@@ -97,26 +100,37 @@ def marginalized_ln_likelihood(ivars, data, Ps):
     """
     TOTALLY CONFUSED ABOUT WHAT map() DOES.
     """
+    print("marginalized_ln_likelihood({}): starting...".format(ivars))
     assert ivars.shape == (3, )
+    N, K, two = data.shape
+    assert two == 2
+    T, two, three = Ps.shape
+    assert two == 2
+    assert three == 3
     if np.any(ivars <= 0.):
         return -np.Inf
     if (ivars[0] > ivars[1]) or (ivars[1] > ivars[2]): # > because INVERSE variances
         return -np.Inf
-    foo = lambda x: marginalized_ln_likelihood_one(ivars, x, Ps)
-    lnlikes = np.array(list(map(foo, data)))
-    print("marginalized_ln_likelihood({}): returning".format(ivars))
+    ivarns = make_projected_ivars(ivars, Ps)
+    logdets = K * np.log(get_2d_determinants(ivarns)) # factor of K for multiplicity
+    foo = lambda x: marginalized_ln_likelihood_one(x, ivarns, logdets)
+    lnlikes = np.array(list(pmap(foo, data)))
+    print("marginalized_ln_likelihood({}): ...returning".format(ivars))
     return np.sum(lnlikes)
+
+def test_function(ivars):
+    """
+    For testing purposes. DO NOT USE.
+    """
+    return -0.5 * np.sum((ivars - Truth) ** 2)
 
 if __name__ == "__main__":
     data = make_fake_data()
     show_data(data, "data_examples")
     Ps = make_random_projection_matrices(1024)
-    foo = lambda x: -1. * marginalized_ln_likelihood(x, data, Ps)
-    x0 = 1. / np.array([50.,45.,40.])
-    result = op.fmin_powell(foo, x0, callback=print)
-    x1 = result[0]
-    for r in result:
-        print(r)
-    print(x1, 1. / x1)
-    print(x0, 1. / x0, foo(x0))
-    print(x1, 1. / x1, foo(x1))
+    foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
+    x0 = 1. / np.array([3.,2.,1.])
+    def bar(x): print(x, 1/x)
+    x1 = op.fmin_powell(foo, x0, callback=bar)
+    print("start", x0, 1. / x0, foo(x0))
+    print("end", x1, 1. / x1, foo(x1))
