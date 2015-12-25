@@ -163,8 +163,14 @@ which (because $\xhat_n,\yhat_n$ are 3-vectors) is a $3\times2$ matrix.
 This object $P_n$ might look like it has six parameters, but it is
 constructed from two orthonormal vectors, so it really only has three
 degrees of freedom, which correspond to the Euler angles.
-
-DWH: SHOW EXAMPLE DATA HERE.
+Some example artificial data, made from random slices of an
+anisotropic 3-d Gaussian, are shown in
+\figurename~\ref{fig:exampledata}.
+\begin{figure}[p]
+~[DWH: FIGURE HERE]~
+\caption{Some example artificial data, made from random slices of an
+anisotropic 3-d Gaussian.\label{fig:exampledata}}
+\end{figure}
 
 The question is:
 Given these data, \emph{can we infer the 3-d variance tensor $V$?}
@@ -243,6 +249,23 @@ marginalized likelihood can be approximated by
 \end{eqnarray}
 where now we have a log-sum-exp form (since it is $\ln p(y_n\given
 P,V)$ that has the simple form).
+
+DWH: Expression for the derivative?
+
+\section{Experiments}
+
+\paragraph{Performance as a function of image and photon counts:}
+DWH: Hello World!
+
+\paragraph{Information content in low-photon images:}
+DWH: Hello World!
+
+\paragraph{Effects of wrong orientation priors:}
+DWH: Hello World!
+
+\section{Discussion}
+
+DWH: Hello World!
 
 \bigskip
 
