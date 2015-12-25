@@ -52,7 +52,7 @@ def get_2d_determinants(ivarns):
     assert twoo == 2
     return ivarns[:,0,0] * ivarns[:,1,1] - ivarns[:,0,1] * ivarns[:,1,0]
 
-def make_fake_data(N=4096, K=128):
+def make_fake_data(N=2**16, K=2**4):
     """
     Every image contains exactly K photons.
     This is unrealistic, but suck it up.
@@ -115,5 +115,8 @@ if __name__ == "__main__":
     x0 = 1. / np.array([50.,45.,40.])
     result = op.fmin_powell(foo, x0, callback=print)
     x1 = result[0]
+    for r in result:
+        print(r)
+    print(x1, 1. / x1)
     print(x0, 1. / x0, foo(x0))
     print(x1, 1. / x1, foo(x1))
