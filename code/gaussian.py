@@ -132,12 +132,13 @@ def read_pickle_file(fn):
     return stuff
 
 if __name__ == "__main__":
+    np.random.seed(23)
     Ps = make_random_projection_matrices(1024)
     for log2K in np.arange(0,8):
+        np.random.seed(42)
         log2N = 19 - log2K
         prefix = "{:02d}_{:02d}".format(log2N,log2K)
         print("starting run", prefix)
-        np.random.seed(42)
         data = make_fake_data(N=2**log2N, K=2**log2K)
         show_data(data, "data_examples_"+prefix)
         foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
