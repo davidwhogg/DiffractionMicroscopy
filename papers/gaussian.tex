@@ -80,6 +80,10 @@ and cite some literature (see references below).
 DWH: State the basic reasoning behind the approach and why,
 counter-intuitively, it should work.
 
+DWH: Point out that although this case is extremely boring and
+unrealistic, there is nothing in prinicple that makes it different
+from much more complex cases.
+
 \section{Problem statement}
 
 In a three-dimensional (3-d) space there exists a 3-d multivariate
@@ -256,6 +260,14 @@ P,V)$ that has the simple form).
 DWH: Expression for the derivatives?
 
 DWH: Implementation notes and details?
+
+DWH: How dense does the sampling have to be?  One answer is that it
+has to be dense enough that the inferences don't change as the density
+function is rotated in $k$-space.  For our purposes, it means we
+should get the same marginalized likelihood (to a precision that is
+$\ll 1$) when we re-order the principal axes of the body.  DWH: FIGURE HERE.
+
+DWH: Also concept of effective number of samples?
 
 \section{Experiments}
 
