@@ -4,6 +4,8 @@ Copyright 2015 David W. Hogg (NYU).
 
 ## Bugs:
 - I need to make the likelihood_one function pickleable and turn on multiprocessing.
+- I ought to make the model a Class that is callable.
+- I ought to cache (but carefully) previously called marginalized likelihoods b/c Powell sux.
 
 ## Comments:
 - I hard-coded some 2x2 linear algebra for speed.
@@ -134,7 +136,7 @@ def read_pickle_file(fn):
 if __name__ == "__main__":
     np.random.seed(23)
     Ps = make_random_projection_matrices(1024)
-    direc = np.array([[1., 0., -1.], [1., -2., 1.], [1., 1., 1.]]) / 50.
+    direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 50.
     for log2K in np.arange(1,8):
         np.random.seed(42)
         log2N = 19 - log2K
