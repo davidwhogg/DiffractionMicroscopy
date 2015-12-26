@@ -125,6 +125,12 @@ def pickle_to_file(fn, stuff):
     print("writing", fn)
     fd.close()
 
+def read_pickle_file(fn):
+    fd = open(fn, "rb")
+    stuff = cp.load(fd)
+    fd.close()
+    return stuff
+
 if __name__ == "__main__":
     Ps = make_random_projection_matrices(1024)
     for log2K in np.arange(0,8):
