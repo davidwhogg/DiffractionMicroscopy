@@ -134,7 +134,8 @@ def read_pickle_file(fn):
 if __name__ == "__main__":
     np.random.seed(23)
     Ps = make_random_projection_matrices(1024)
-    for log2K in np.arange(0,8):
+    direc = np.array([[1., 0., -1.], [1., -2., 1.], [1., 1., 1.]]) / 50.
+    for log2K in np.arange(1,8):
         np.random.seed(42)
         log2N = 19 - log2K
         prefix = "{:02d}_{:02d}".format(log2N,log2K)
@@ -142,9 +143,9 @@ if __name__ == "__main__":
         data = make_fake_data(N=2**log2N, K=2**log2K)
         show_data(data, "data_examples_"+prefix)
         foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
-        x0 = 1. / np.array([3.,2.,1.])
+        x0 = 1. / np.array([50.,45.,40.])
         def bar(x): print(prefix, x, 1/x)
-        x1 = op.fmin_powell(foo, x0, callback=bar)
+        x1 = op.fmin_powell(foo, x0, callback=bar, direc=direc)
         print(prefix, "start", x0, 1. / x0, foo(x0))
         print(prefix, "end", x1, 1. / x1, foo(x1))
         pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1))
