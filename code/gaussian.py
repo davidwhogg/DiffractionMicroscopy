@@ -142,7 +142,7 @@ if __name__ == "__main__":
     Ps = make_random_projection_matrices(1024)
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
-    for log2NK in np.arange(10, 20):
+    for log2NK in np.arange(9, 20):
         for log2K in np.arange(8, -1, -1):
             log2N = log2NK - log2K # MAGIC number of photons 2**19
             prefix = "{:02d}_{:02d}".format(log2N,log2K)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
             # show_data(data, "data_examples_"+prefix)
 
             # initialize empirically
-            empvar = np.mean(data * data))
+            empvar = np.mean(data * data)
             x0 = np.log(1. / np.array([1.1 * empvar, empvar, 0.9 * empvar]))
             x0 = np.sort(x0)
 
