@@ -12,6 +12,7 @@ Copyright 2015 David W. Hogg (NYU).
 import numpy as np
 import scipy.optimize as op
 from scipy.misc import logsumexp
+import pickle as cp
 import pylab as plt
 
 if False:
@@ -21,7 +22,6 @@ if False:
 else:
     pmap = map
 
-np.random.seed(42)
 Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
 
 def _normalize_vectors(vecs):
@@ -91,7 +91,8 @@ def marginalized_ln_likelihood_one(datum, ivarns, logdets):
     """
     Compute the sampling approximation to the marginalized likelihood.
     """
-    chisquareds = np.sum(np.sum(np.tensordot(datum, ivarns, axes=(1,1)) * datum[:,None,:],
+    dd = np.atleast_2d(datum)
+    chisquareds = np.sum(np.sum(np.tensordot(dd, ivarns, axes=(1,1)) * dd[:,None,:],
                                 axis=2), axis=0) # should be length T
     loglikes = -0.5 * chisquareds + 0.5 * logdets # plus because INVERSE variances
     return logsumexp(loglikes)
@@ -118,19 +119,25 @@ def marginalized_ln_likelihood(ivars, data, Ps):
     print("marginalized_ln_likelihood({}): ...returning".format(ivars))
     return np.sum(lnlikes)
 
-def test_function(ivars):
-    """
-    For testing purposes. DO NOT USE.
-    """
-    return -0.5 * np.sum((ivars - Truth) ** 2)
+def pickle_to_file(fn, stuff):
+    fd = open(fn, "wb")
+    cp.dump(stuff, fd)
+    print("writing", fn)
+    fd.close()
 
 if __name__ == "__main__":
-    data = make_fake_data()
-    show_data(data, "data_examples")
     Ps = make_random_projection_matrices(1024)
-    foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
-    x0 = 1. / np.array([3.,2.,1.])
-    def bar(x): print(x, 1/x)
-    x1 = op.fmin_powell(foo, x0, callback=bar)
-    print("start", x0, 1. / x0, foo(x0))
-    print("end", x1, 1. / x1, foo(x1))
+    for log2K in np.arange(0,8):
+        log2N = 19 - log2K
+        prefix = "{:02d}_{:02d}".format(log2N,log2K)
+        print("starting run", prefix)
+        np.random.seed(42)
+        data = make_fake_data(N=2**log2N, K=2**log2K)
+        show_data(data, "data_examples_"+prefix)
+        foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
+        x0 = 1. / np.array([3.,2.,1.])
+        def bar(x): print(prefix, x, 1/x)
+        x1 = op.fmin_powell(foo, x0, callback=bar)
+        print(prefix, "start", x0, 1. / x0, foo(x0))
+        print(prefix, "end", x1, 1. / x1, foo(x1))
+        pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1))
