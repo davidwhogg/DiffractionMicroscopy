@@ -4,12 +4,13 @@
 % To-Do list
 % ----------
 % - perhaps re-phrase everything in terms of INVERSE variance?
+% - possible confusions between the variance of the $k$-space Gaussian and the inverse variance of the $x$-space Gaussian!
 
 % Style notes
 % -----------
 
 \documentclass[12pt]{article}
-\usepackage{amssymb, mathrsfs, url}
+\usepackage{amsmath, amssymb, mathrsfs, url}
 \input{vc}
 
 % useless formatting
@@ -30,10 +31,10 @@
 \newcommand{\yhat}{\unitvec{y}}
 \newcommand{\zhat}{\unitvec{z}}
 \newcommand{\transpose}{^{\mathsf{T}}}
-\newcommand{\inverse}{^{-1}}
 \newcommand{\given}{\,|\,}
 \newcommand{\setof}[1]{\left\{{#1}\right\}}
 \newcommand{\dd}{\mathrm{d}}
+\DeclareMathOperator{\trace}{tr}
 
 \begin{document}\sloppy\sloppypar
 
@@ -135,6 +136,13 @@ the pixel; we will ignore this integral for now, and just evaluate.)
 None of the projection directions $\zhat_n$ or 2-d rotations are
 known; only the noisy images are given.
 
+Amusingly, in the limit in which the image is filled densely with
+tiny pixels, each pixel will (with arbitrarily high probability) be
+either empty or contain exactly one photon.
+In this limit, each image $y_n$ can be thought of as simply a photon
+list, or a set $\setof{\xi_{nk}}_{k=1}^{K_n}$ of $K_n$ photons $k$,
+each with position $\xi_{nk}$.
+
 The variance tensor of the 2-d Gaussian blob appearing in image $y_n$
 is given by a slice and rotation of the 3-d inverse-variance tensor:
 \begin{eqnarray}
@@ -196,20 +204,15 @@ count $k$ given expectation $\lambda$.
 The likelihood is a function of the projections $P_n$ and the
 three-space tensor $V$, through their combination $V_n$.
 
-Amusingly, in the small-pixel limit (that is, in the limit in which
-the image plane is dense with tiny pixels), the image $y_n$ just
-becomes a photon list, containing $K_n$ photons $k$, each with
-position $\xi_{nk}$.
-
 If we drop (don't infer) normalizations, and presume that all pixels
 have the same effective area $\Delta_m$ in $k$-space, then this leads
 to a log-likelihood
 \begin{eqnarray}
   \ln p(y_n\given P_n,V) &=& \sum_{m=1}^M \ln p(y_{nm}\given P_n,V)
   \\
-  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln \sqnorm{\normal(\xi_m\given 0,V_n)} + \mbox{const}
+  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln\sqnorm{\normal(\xi_m\given 0,V_n)} + \mbox{const}
   \\
-  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln \normal(\xi_m\given 0,\frac{1}{2}\,V_n) + \mbox{const}
+  \ln p(y_{nm}\given P_n,V) &=& y_{nm}\,\ln\normal(\xi_m\given 0,\frac{1}{2}\,V_n) + \mbox{const}
   \quad,
 \end{eqnarray}
 where we are ignoring constants, and where we have used that the square
@@ -219,7 +222,7 @@ sum over photons:
 \begin{eqnarray}
   \ln p(y_n\given P_n,V) &=& \sum_{k=1}^{K_n} \ln p(y_{nk}\given P_n,V)
   \\
-  \ln p(y_{nk}\given P_n,V) &=& \ln \normal(\xi_{nk}\given 0,\frac{1}{2}\,V_n) + \mbox{const}
+  \ln p(y_{nk}\given P_n,V) &=& \ln\normal(\xi_{nk}\given 0,\frac{1}{2}\,V_n) + \mbox{const}
   \quad.
 \end{eqnarray}
 
@@ -229,7 +232,7 @@ We are going to think of the rectangular projection matrix $P_n$ as
 being controlled by a set of Euler angles $\phi$ and we are going to
 marginalize these out, using an isotropic prior.
 \begin{eqnarray}
-  \ln p(y_n\given V) &=& \ln \int p(y_n\given P_{\phi},V)\,p(\phi)\,\dd\phi
+  \ln p(y_n\given V) &=& \ln\int p(y_n\given P_{\phi},V)\,p(\phi)\,\dd\phi
   \quad,
 \end{eqnarray}
 where now we subscript $P_{\phi}$ with the Euler angles and integrate
@@ -255,6 +258,18 @@ DWH: Expression for the derivative?
 
 \paragraph{Performance as a function of image and photon counts:}
 DWH: Hello World!
+
+DWH: As a performance metric, we will use the symmetrized K--L
+divergence $S$, which in the case of 3-d, zero-mean, multivariate
+Gaussians, is:
+\begin{eqnarray}
+  S &\equiv& \frac{1}{2}\,\left[\trace(V_1^{-1}\cdot V_2)
+                              + \trace(V_2^{-1}\cdot V_1)
+                              - 6\right]
+  \quad,
+\end{eqnarray}
+where $V_1$ and $V_2$ are the variance tensors of the two Gaussians
+being compared.
 
 \paragraph{Information content in low-photon images:}
 DWH: Hello World!
