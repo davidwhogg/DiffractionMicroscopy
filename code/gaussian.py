@@ -114,8 +114,6 @@ def marginalized_ln_likelihood(ivars, data, Ps):
     assert three == 3
     if np.any(ivars <= 0.):
         return -np.Inf
-    if (ivars[0] > ivars[1]) or (ivars[1] > ivars[2]): # > because INVERSE variances
-        return -np.Inf
     ivarns = make_projected_ivars(ivars, Ps)
     logdets = K * np.log(get_2d_determinants(ivarns)) # factor of K for multiplicity
     foo = lambda x: marginalized_ln_likelihood_one(x, ivarns, logdets)
@@ -141,7 +139,7 @@ if __name__ == "__main__":
     Ps = make_random_projection_matrices(1024)
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 50.
 
-    for log2K in np.arange(1,8):
+    for log2K in np.arange(8, -1, -1):
         log2N = 19 - log2K # MAGIC number of photons 2**19
         prefix = "{:02d}_{:02d}".format(log2N,log2K)
         print("starting run", prefix)
@@ -153,8 +151,11 @@ if __name__ == "__main__":
         foo = lambda x: -2. * marginalized_ln_likelihood(x, data, Ps)
         x0 = 1. / np.array([50.,45.,40.])
         def bar(x): print(prefix, x, 1/x)
-        x1 = op.fmin_powell(foo, x0, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
+        x1 = op.fmin_powell(foo, x0, callback=bar, direc=direc, xtol=1.e-3, ftol=1.e-5)
+        x1 = np.sort(x1)
+        x2 = op.fmin_powell(foo, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
 
+        pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1, x2))
         print(prefix, "start", x0, 1. / x0, foo(x0))
-        print(prefix, "end", x1, 1. / x1, foo(x1))
-        pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1))
+        print(prefix, "middle", x1, 1. / x1, foo(x1))
+        print(prefix, "end", x2, 1. / x2, foo(x1))
