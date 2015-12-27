@@ -3,8 +3,6 @@ This file is part of the DiffractionMicroscopy project.
 Copyright 2015 David W. Hogg (NYU).
 
 ## Bugs:
-- Perhaps ought to cap the range on the ivars b/c runaway cases...?
-- Need to check that T (number of samples) is large enough.
 - I need to make the likelihood_one function pickleable and turn on multiprocessing.
 - I ought to make the model a Class that is callable.
 - I ought to cache (but carefully) previously called marginalized likelihoods b/c Powell sux.
@@ -104,11 +102,11 @@ def marginalized_ln_likelihood_one(datum, ivarts, logdets):
     loglikes = -0.5 * chisquareds + 0.5 * logdets # plus because INVERSE variances
     return logsumexp(loglikes)
 
-def marginalized_ln_likelihood(ivars, data, Ps):
+def marginalized_ln_likelihood(ivars, data, Ps, verbose=True):
     """
     TOTALLY CONFUSED ABOUT WHAT map() DOES.
     """
-    print("marginalized_ln_likelihood({}): starting...".format(1./ivars))
+    if verbose: print("marginalized_ln_likelihood({}): starting...".format(1./ivars))
     assert ivars.shape == (3, )
     N, K, two = data.shape
     assert two == 2
@@ -121,7 +119,7 @@ def marginalized_ln_likelihood(ivars, data, Ps):
     logdets = K * np.log(get_2d_determinants(ivarts)) # factor of K for multiplicity
     foo = lambda x: marginalized_ln_likelihood_one(x, ivarts, logdets)
     lnlikes = np.array(list(pmap(foo, data)))
-    print("marginalized_ln_likelihood({}): ...returning".format(1./ivars))
+    if verbose: print("marginalized_ln_likelihood({}): ...returning".format(1./ivars))
     return np.sum(lnlikes)
 
 def pickle_to_file(fn, stuff):
@@ -139,7 +137,7 @@ def read_pickle_file(fn):
 if __name__ == "__main__":
 
     np.random.seed(23)
-    Ps = make_random_projection_matrices(1024)
+    Ps = make_random_projection_matrices(2048)
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
     for log2NK in np.arange(9, 20):
@@ -166,8 +164,18 @@ if __name__ == "__main__":
             x2 = op.fmin_powell(foo, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
             x2 = np.sort(x2)
 
+            # check size of P sampling
+            sixf = np.zeros(6)
+            sixf[0] = foo(x2[[0,1,2]])
+            sixf[1] = foo(x2[[1,2,0]])
+            sixf[2] = foo(x2[[2,0,1]])
+            sixf[3] = foo(x2[[2,1,0]])
+            sixf[4] = foo(x2[[1,0,2]])
+            sixf[5] = foo(x2[[0,2,1]])
+
             # save
-            pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1, x2))
+            pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1, x2, sixf))
             print(prefix, "start",  x0, np.exp(-x0), foo(x0))
             print(prefix, "middle", x1, np.exp(-x1), foo(x1))
             print(prefix, "end",    x2, np.exp(-x2), foo(x1))
+            print(prefix, "badness of the sampling:", np.max(sixf) - np.min(sixf))
