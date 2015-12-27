@@ -140,9 +140,11 @@ if __name__ == "__main__":
     Ps = make_random_projection_matrices(2048)
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
-    for log2NK in np.arange(9, 20):
-        for log2K in np.arange(8, -1, -1):
-            log2N = log2NK - log2K # MAGIC number of photons 2**19
+    for log2NK in np.arange(5, 18):
+        for log2K in np.arange(9):
+            log2N = log2NK - log2K
+            if log2N < 2:
+                break
             prefix = "{:02d}_{:02d}".format(log2N,log2K)
             print("starting run", prefix)
 
