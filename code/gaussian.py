@@ -17,7 +17,6 @@ import numpy as np
 import scipy.optimize as op
 from scipy.misc import logsumexp
 import pickle as cp
-import pylab as plt
 
 if False:
     from multiprocessing import Pool
@@ -80,18 +79,6 @@ def make_fake_data(N=2**15, K=2**4): # magic numbers
         samples[n] = np.random.multivariate_normal(zero, Vn, size=K)
     return samples
 
-def show_data(samples, prefix):
-    plt.clf()
-    nex = np.min((16, len(samples)))
-    for n in range(nex):
-        plt.subplot(4,4,n+1)
-        plt.plot(samples[n,:,0], samples[n,:,1], "k.", alpha=0.5)
-        plt.xlim(-15., 15.)
-        plt.ylim(plt.xlim())
-        plt.title("image {}".format(n))
-    plt.savefig(prefix+".png")
-    return None
-
 def marginalized_ln_likelihood_one(datum, ivarts, logdets):
     """
     Compute the sampling approximation to the marginalized likelihood.
@@ -151,7 +138,6 @@ if __name__ == "__main__":
             # make fake data
             np.random.seed(42)
             data = make_fake_data(N=2**log2N, K=2**log2K)
-            # show_data(data, "data_examples_"+prefix)
 
             # initialize empirically
             empvar = np.mean(data * data)
