@@ -57,10 +57,9 @@ def divergence(iv1, iv2):
 def plot_divergences(Ns, Ks, ivarss):
     divs = np.array([divergence(ivars, Truth) for ivars in ivarss])
     plt.clf()
-    plt.scatter(Ns, Ks, c=divs, s=200,
-                vmin=0., vmax=0.3, cmap="gray")
+    plt.scatter(Ns, Ks, c=np.log10(divs), s=200, cmap="gray")
     cb = plt.colorbar()
-    cb.set_label("divergence from Truth")
+    cb.set_label("$\log_{10}$ divergence from Truth")
     plt.loglog()
     plt.xlim(np.min(Ns) / 2, np.max(Ns) * 2)
     plt.ylim(np.min(Ks) / 2, np.max(Ks) * 2)
@@ -72,10 +71,9 @@ def plot_divergences(Ns, Ks, ivarss):
 def plot_sampling_badnesses(Ns, Ks, sixfs):
     badnesses = np.max(sixfs, axis=1) - np.min(sixfs, axis=1)
     plt.clf()
-    plt.scatter(Ns, Ks, c=badnesses, s=200,
-                vmin=0., vmax=10., cmap="gray")
+    plt.scatter(Ns, Ks, c=np.log10(badnesses), s=200, cmap="gray")
     cb = plt.colorbar()
-    cb.set_label("sampling badness")
+    cb.set_label("$\log_{10}$ sampling badness")
     plt.loglog()
     plt.xlim(np.min(Ns) / 2, np.max(Ns) * 2)
     plt.ylim(np.min(Ks) / 2, np.max(Ks) * 2)
