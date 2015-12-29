@@ -27,48 +27,134 @@ else:
 
 Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
 
-def _normalize_vectors(vecs):
-    return vecs / np.sqrt(np.sum(vecs * vecs, axis=1))[:,None]
+class GaussianMolecule():
 
-def make_random_projection_matrices(N):
-    xhat = _normalize_vectors(np.random.normal(size=(N, 3)))
-    assert np.allclose(np.sum(xhat * xhat, axis = 1), 1.)
-    yhat = np.random.normal(size=(N, 3))
-    yhat = _normalize_vectors(yhat - xhat * np.sum(xhat * yhat, axis=1)[:,None])
-    assert np.allclose(np.sum(xhat * yhat, axis = 1), 0.)
-    assert np.allclose(np.sum(yhat * yhat, axis = 1), 1.)
-    Ps = np.hstack((xhat, yhat)).reshape((N,2,3))
-    return Ps
+    def __init__(self, data):
+        self.set_data(data)
+        self.ivar = None
+        self.ivarts = None
+        self.logdets = None
+        self.Ps = None
+        return None
 
-def make_projected_ivars(ivars, Ps):
-    """
-    Hard-coded for speed.
-    """
-    assert ivars.shape == (3, )
-    T, two, three = Ps.shape
-    assert two == 2
-    assert three == 3
-    ivarts = np.zeros((T, 2, 2))
-    ivarts[:, 0, 0] = np.sum(Ps[:,0,:] * ivars[None,None,:] * Ps[:,0,:], axis=2)
-    foo             = np.sum(Ps[:,0,:] * ivars[None,None,:] * Ps[:,1,:], axis=2)
-    ivarts[:, 0, 1] = foo
-    ivarts[:, 1, 0] = foo
-    ivarts[:, 1, 1] = np.sum(Ps[:,1,:] * ivars[None,None,:] * Ps[:,1,:], axis=2)
-    return ivarts
+    def _reset_cache(self):
+        self.cachex = np.array([,])
+        self.cachey = np.array([,])
+        return None
 
-def get_2d_determinants(ivarts):
-    """
-    Hard-coded for speed.
-    """
-    T, two, twoo = ivarts.shape
-    assert two == 2
-    assert twoo == 2
-    return ivarts[:,0,0] * ivarts[:,1,1] - ivarts[:,0,1] * ivarts[:,1,0]
+    def set_data(self, data):
+        N, K, two = data.shape
+        assert two == 2
+        self.N = N
+        self.K = K
+        self.data = data
+        self._reset_cache()
+        return None
+
+    def get_data(self):
+        return self.data
+
+    def set_ivar(self, ivar):
+        assert ivar.shape == 3
+        assert np.all(ivar > 0.)
+        self.ivar = ivar
+        self.ivarts = None # reset
+        self.logdets = None
+        return None
+
+    def get_ivar(self):
+        return self.ivar
+
+    def set_ivar_from_vector(self, vector):
+        set_ivar(np.exp(vector))
+        return None
+
+    def get_vector(self, vector):
+        return np.log(self.ivar)
+
+    def _normalize_vectors(self, vecs):
+        return vecs / np.sqrt(np.sum(vecs * vecs, axis=1))[:,None]
+
+    def make_projection_matrix_sampling(self, T):
+        self.T = T
+        xhat = self._normalize_vectors(np.random.normal(size=(self.T, 3)))
+        assert np.allclose(np.sum(xhat * xhat, axis = 1), 1.)
+        yhat = np.random.normal(size=(self.T, 3))
+        yhat = self._normalize_vectors(yhat - xhat * np.sum(xhat * yhat, axis=1)[:,None])
+        assert np.allclose(np.sum(xhat * yhat, axis = 1), 0.)
+        assert np.allclose(np.sum(yhat * yhat, axis = 1), 1.)
+        self.Ps = np.hstack((xhat, yhat)).reshape((self.T,2,3))
+        self.ivarts = None # reset
+        self.logdets = None
+        return None
+
+    def get_Ps():
+        if self.Ps is None:
+            self.make_projection_matrix_sampling(2048) # magic
+        return self.Ps
+
+    def get_ivarts(self):
+        """
+        Hard-coded for speed.
+        """
+        if self.ivarts is None:
+            Ps = self.get_Ps()
+            ivar = self.get_ivar()
+            ivarts = np.zeros((self.T, 2, 2))
+            ivarts[:, 0, 0] = np.sum(Ps[:,0,:] * ivar[None,None,:] * Ps[:,0,:], axis=2)
+            foo             = np.sum(Ps[:,0,:] * ivar[None,None,:] * Ps[:,1,:], axis=2)
+            ivarts[:, 0, 1] = foo
+            ivarts[:, 1, 0] = foo
+            ivarts[:, 1, 1] = np.sum(Ps[:,1,:] * ivar[None,None,:] * Ps[:,1,:], axis=2)
+            self.ivarts = ivarts
+            self.logdets = None
+        return self.ivarts
+
+    def get_logdets(self):
+        """
+        Hard-coded for speed.
+        """
+        if self.logdets is None:
+            ivarts = self.get_ivarts()
+            self.logdets = np.log(ivarts[:,0,0] * ivarts[:,1,1] - ivarts[:,0,1] * ivarts[:,1,0])
+        return self.logdets
+
+    def get_datum(self, n):
+        return self.get_data()[n]
+
+    def get_chisquareds(self, n):
+        dd = self.get_datum(n)
+        return np.sum(np.sum(np.tensordot(dd, self.get_ivarts(), axes=(1,1)) * dd[:,None,:],
+                             axis=2), axis=0) # should be length T
+
+    def _marginalized_ln_likelihood_one(self, n):
+        """
+        Compute the sampling approximation to the marginalized likelihood.
+        """
+        # plus because INVERSE variances
+        return logsumexp(-0.5 * self.get_chisquareds(n) + 0.5 * self.get_logdets())
+
+    def marginalized_ln_likelihood(self, verbose=True):
+        """
+        TOTALLY CONFUSED ABOUT WHAT map() DOES.
+        """
+        if verbose: print("marginalized_ln_likelihood({}): starting...".format(1./self.get_ivar()))
+        lnlikes = np.array(list(pmap(self._marginalized_ln_likelihood_one, range(self.N))))
+        if verbose: print("marginalized_ln_likelihood({}): ...returning".format(1./self.get_ivar()))
+        return np.sum(lnlikes)
+
+    def __call__(self, vector):
+        self.set_ivar_from_vector(vector)
+        result = self.marginalized_ln_likelihood(self)
+        self.cachex.append(vector)
+        self.cachey.append(result)
+        return result
 
 def make_fake_data(N=2**15, K=2**4): # magic numbers
     """
     Every image contains exactly K photons.
     This is unrealistic, but suck it up.
+    NEEDS TO BE REWRITTEN.
     """
     Ps = make_random_projection_matrices(N)
     zero = np.zeros(2)
@@ -78,36 +164,6 @@ def make_fake_data(N=2**15, K=2**4): # magic numbers
         Vn = np.linalg.inv(ivarns[n])
         samples[n] = np.random.multivariate_normal(zero, Vn, size=K)
     return samples
-
-def marginalized_ln_likelihood_one(datum, ivarts, logdets):
-    """
-    Compute the sampling approximation to the marginalized likelihood.
-    """
-    dd = np.atleast_2d(datum)
-    chisquareds = np.sum(np.sum(np.tensordot(dd, ivarts, axes=(1,1)) * dd[:,None,:],
-                                axis=2), axis=0) # should be length T
-    loglikes = -0.5 * chisquareds + 0.5 * logdets # plus because INVERSE variances
-    return logsumexp(loglikes)
-
-def marginalized_ln_likelihood(ivars, data, Ps, verbose=True):
-    """
-    TOTALLY CONFUSED ABOUT WHAT map() DOES.
-    """
-    if verbose: print("marginalized_ln_likelihood({}): starting...".format(1./ivars))
-    assert ivars.shape == (3, )
-    N, K, two = data.shape
-    assert two == 2
-    T, two, three = Ps.shape
-    assert two == 2
-    assert three == 3
-    if np.any(ivars <= 0.):
-        return -np.Inf
-    ivarts = make_projected_ivars(ivars, Ps)
-    logdets = K * np.log(get_2d_determinants(ivarts)) # factor of K for multiplicity
-    foo = lambda x: marginalized_ln_likelihood_one(x, ivarts, logdets)
-    lnlikes = np.array(list(pmap(foo, data)))
-    if verbose: print("marginalized_ln_likelihood({}): ...returning".format(1./ivars))
-    return np.sum(lnlikes)
 
 def pickle_to_file(fn, stuff):
     fd = open(fn, "wb")
