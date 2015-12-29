@@ -30,7 +30,8 @@ Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
 class GaussianMolecule():
 
     def __init__(self, data):
-        self.set_data(data)
+        self.data = None
+        self._reset_cache()
         self.ivar = None
         self.ivarts = None
         self.logdets = None
@@ -150,16 +151,15 @@ class GaussianMolecule():
         self.cachey.append(result)
         return result
 
-def make_fake_data(N=2**15, K=2**4): # magic numbers
+def make_fake_data(N, K):
     """
     Every image contains exactly K photons.
     This is unrealistic, but suck it up.
-    NEEDS TO BE REWRITTEN.
     """
-    Ps = make_random_projection_matrices(N)
-    zero = np.zeros(2)
-    samples = np.zeros((N, K, 2))
-    ivarns = make_projected_ivars(Truth, Ps)
+    foo = GaussianMolecule():
+    foo.set_ivar(Truth)
+    foo.make_projection_matrix_sampling(N)
+    ivarns = foo.get_ivarts()
     for n in range(N):
         Vn = np.linalg.inv(ivarns[n])
         samples[n] = np.random.multivariate_normal(zero, Vn, size=K)
@@ -180,7 +180,8 @@ def read_pickle_file(fn):
 if __name__ == "__main__":
 
     np.random.seed(23)
-    Ps = make_random_projection_matrices(2048)
+    model = GaussianMolecule()
+    Ps = model.get_Ps() # force construction of sampling
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
     for log2NK in np.arange(5, 18):
@@ -194,6 +195,7 @@ if __name__ == "__main__":
             # make fake data
             np.random.seed(42)
             data = make_fake_data(N=2**log2N, K=2**log2K)
+            model.set_data(data)
 
             # initialize empirically
             empvar = np.mean(data * data)
@@ -201,25 +203,24 @@ if __name__ == "__main__":
             x0 = np.sort(x0)
 
             # optimize
-            foo = lambda x: -2. * marginalized_ln_likelihood(np.exp(x), data, Ps)
             def bar(x): print(prefix, x, np.exp(-x))
-            x1 = op.fmin_powell(foo, x0, callback=bar, direc=direc, xtol=1.e-3, ftol=1.e-5)
+            x1 = op.fmin_powell(model, x0, callback=bar, direc=direc, xtol=1.e-3, ftol=1.e-5)
             x1 = np.sort(x1)
-            x2 = op.fmin_powell(foo, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
+            x2 = op.fmin_powell(model, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
             x2 = np.sort(x2)
 
             # check size of P sampling
             sixf = np.zeros(6)
-            sixf[0] = foo(x2[[0,1,2]])
-            sixf[1] = foo(x2[[1,2,0]])
-            sixf[2] = foo(x2[[2,0,1]])
-            sixf[3] = foo(x2[[2,1,0]])
-            sixf[4] = foo(x2[[1,0,2]])
-            sixf[5] = foo(x2[[0,2,1]])
+            sixf[0] = model(x2[[0,1,2]])
+            sixf[1] = model(x2[[1,2,0]])
+            sixf[2] = model(x2[[2,0,1]])
+            sixf[3] = model(x2[[2,1,0]])
+            sixf[4] = model(x2[[1,0,2]])
+            sixf[5] = model(x2[[0,2,1]])
 
             # save
-            pickle_to_file("data_"+prefix+".pkl", (data, Ps, x0, x1, x2, sixf))
-            print(prefix, "start",  x0, np.exp(-x0), foo(x0))
-            print(prefix, "middle", x1, np.exp(-x1), foo(x1))
-            print(prefix, "end",    x2, np.exp(-x2), foo(x1))
+            pickle_to_file("model_"+prefix+".pkl", (model, x0, x1, x2, sixf))
+            print(prefix, "start",  x0, np.exp(-x0), model(x0))
+            print(prefix, "middle", x1, np.exp(-x1), model(x1))
+            print(prefix, "end",    x2, np.exp(-x2), model(x1))
             print(prefix, "badness of the sampling:", np.max(sixf) - np.min(sixf))
