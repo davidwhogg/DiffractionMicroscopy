@@ -29,18 +29,12 @@ Truth = 1. / np.array([47., 13., 11.]) # axis-aligned inverse variances
 
 class GaussianMolecule():
 
-    def __init__(self, data):
+    def __init__(self):
         self.data = None
-        self._reset_cache()
         self.ivar = None
         self.ivarts = None
-        self.logdets = None
+        self.lndets = None
         self.Ps = None
-        return None
-
-    def _reset_cache(self):
-        self.cachex = np.array([,])
-        self.cachey = np.array([,])
         return None
 
     def set_data(self, data):
@@ -49,25 +43,25 @@ class GaussianMolecule():
         self.N = N
         self.K = K
         self.data = data
-        self._reset_cache()
         return None
 
     def get_data(self):
+        assert data is not None
         return self.data
 
     def set_ivar(self, ivar):
-        assert ivar.shape == 3
+        assert ivar.shape == (3, )
         assert np.all(ivar > 0.)
         self.ivar = ivar
         self.ivarts = None # reset
-        self.logdets = None
+        self.lndets = None
         return None
 
     def get_ivar(self):
         return self.ivar
 
     def set_ivar_from_vector(self, vector):
-        set_ivar(np.exp(vector))
+        self.set_ivar(np.exp(vector))
         return None
 
     def get_vector(self, vector):
@@ -86,10 +80,10 @@ class GaussianMolecule():
         assert np.allclose(np.sum(yhat * yhat, axis = 1), 1.)
         self.Ps = np.hstack((xhat, yhat)).reshape((self.T,2,3))
         self.ivarts = None # reset
-        self.logdets = None
+        self.lndets = None
         return None
 
-    def get_Ps():
+    def get_Ps(self):
         if self.Ps is None:
             self.make_projection_matrix_sampling(2048) # magic
         return self.Ps
@@ -108,23 +102,27 @@ class GaussianMolecule():
             ivarts[:, 1, 0] = foo
             ivarts[:, 1, 1] = np.sum(Ps[:,1,:] * ivar[None,None,:] * Ps[:,1,:], axis=2)
             self.ivarts = ivarts
-            self.logdets = None
+            self.lndets = None
         return self.ivarts
 
-    def get_logdets(self):
+    def get_lndets(self):
         """
         Hard-coded for speed.
+        NOT SAFE FOR UNDERFLOW.
         """
-        if self.logdets is None:
+        if self.lndets is None:
             ivarts = self.get_ivarts()
-            self.logdets = np.log(ivarts[:,0,0] * ivarts[:,1,1] - ivarts[:,0,1] * ivarts[:,1,0])
-        return self.logdets
+            self.lndets = np.log(ivarts[:,0,0] * ivarts[:,1,1] - ivarts[:,0,1] * ivarts[:,1,0])
+        return self.lndets
 
     def get_datum(self, n):
         return self.get_data()[n]
 
     def get_chisquareds(self, n):
         dd = self.get_datum(n)
+        if n == 0:
+            foo = np.sum(np.sum(np.tensordot(dd, self.get_ivarts(), axes=(1,1)) * dd[:,None,:],
+                                axis=2), axis=0)
         return np.sum(np.sum(np.tensordot(dd, self.get_ivarts(), axes=(1,1)) * dd[:,None,:],
                              axis=2), axis=0) # should be length T
 
@@ -132,34 +130,36 @@ class GaussianMolecule():
         """
         Compute the sampling approximation to the marginalized likelihood.
         """
-        # plus because INVERSE variances
-        return logsumexp(-0.5 * self.get_chisquareds(n) + 0.5 * self.get_logdets())
+        return logsumexp(-0.5 * self.get_chisquareds(n) + 0.5 * self.K * self.get_lndets())
+        # K for multiplicity; plus because INVERSE variances
 
-    def marginalized_ln_likelihood(self, verbose=True):
+    def marginalized_ln_likelihood(self):
         """
         TOTALLY CONFUSED ABOUT WHAT map() DOES.
         """
-        if verbose: print("marginalized_ln_likelihood({}): starting...".format(1./self.get_ivar()))
-        lnlikes = np.array(list(pmap(self._marginalized_ln_likelihood_one, range(self.N))))
-        if verbose: print("marginalized_ln_likelihood({}): ...returning".format(1./self.get_ivar()))
+        lnlikes = [self._marginalized_ln_likelihood_one(n) for n in range(self.N)]
         return np.sum(lnlikes)
 
-    def __call__(self, vector):
+    def __call__(self, vector, verbose=True):
         self.set_ivar_from_vector(vector)
-        result = self.marginalized_ln_likelihood(self)
-        self.cachex.append(vector)
-        self.cachey.append(result)
+        result = -2. * self.marginalized_ln_likelihood()
+        if verbose: print("model({}) = {}".format(1./self.get_ivar(), result))
         return result
 
 def make_fake_data(N, K):
     """
     Every image contains exactly K photons.
     This is unrealistic, but suck it up.
+
+    # Notes:
+    - This punks the GaussianMolecule() class to make fake data.
     """
-    foo = GaussianMolecule():
+    foo = GaussianMolecule()
     foo.set_ivar(Truth)
     foo.make_projection_matrix_sampling(N)
     ivarns = foo.get_ivarts()
+    zero = np.zeros(2)
+    samples = np.zeros((N, K, 2))
     for n in range(N):
         Vn = np.linalg.inv(ivarns[n])
         samples[n] = np.random.multivariate_normal(zero, Vn, size=K)
@@ -184,8 +184,8 @@ if __name__ == "__main__":
     Ps = model.get_Ps() # force construction of sampling
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
-    for log2NK in np.arange(5, 18):
-        for log2K in np.arange(9):
+    for log2NK in np.arange(12, 18):
+        for log2K in np.arange(7,9):
             log2N = log2NK - log2K
             if log2N < 2:
                 break
@@ -222,5 +222,5 @@ if __name__ == "__main__":
             pickle_to_file("model_"+prefix+".pkl", (model, x0, x1, x2, sixf))
             print(prefix, "start",  x0, np.exp(-x0), model(x0))
             print(prefix, "middle", x1, np.exp(-x1), model(x1))
-            print(prefix, "end",    x2, np.exp(-x2), model(x1))
+            print(prefix, "end",    x2, np.exp(-x2), model(x2))
             print(prefix, "badness of the sampling:", np.max(sixf) - np.min(sixf))
