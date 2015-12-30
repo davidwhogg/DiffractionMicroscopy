@@ -20,7 +20,7 @@
 \setlength{\parskip}{0ex}
 
 % text definitions
-\newcommand{\doi}[1]{\url{http://doi.org/#1}}
+\newcommand{\doi}[1]{{\footnotesize \url{http://doi.org/#1}}}
 
 % math definitions
 \newcommand{\normal}{\mathscr{N}}
@@ -40,7 +40,7 @@
 \begin{document}\sloppy\sloppypar
 
 \section*{\raggedright%
-  Reconstruction of the norm of the Fourier transform,
+  Reconstruction of (the norm of) the Fourier transform
   from noisy diffraction images taken at unknown orientations: The Gaussian case}
 \noindent
 David W. Hogg%
@@ -53,9 +53,8 @@ David W. Hogg%
 
 \paragraph{Abstract:}
 In certain kinds of diffraction-microscopy problems, the sample being
-imaged is only in the device for a short time, and at unknown
-orientation (Euler angles) relative to the beam and detector,
-leading to a noisy image of one 2-d slice
+imaged is only in the x-ray beam for a short time, and at unknown
+orientation (Euler angles), leading to a noisy image of one 2-d slice
 of the squared norm of the full 3-d Fourier Transform.
 In principle, many of these noisy slice images can be combined to
 reconstruct the full 3-d function.
@@ -311,12 +310,18 @@ number of photons per image drops.
 
 DWH: Hello World!
 
+DWH: Didn't deal with censoring; how would things change if I did?
+
 DWH: Make the Jeremy Magland argument that you could have done this
 restricted case with some clever empirical statistics!  Hence: No
 mystery.  The mystery is that the arguments for this approach make no
 assumptions about the form or complexity of the density.
 
 \bigskip
+
+It is a pleasure to thank Leslie Greengard (SCDA) and Jeremy Magland
+(SCDA) for valuable discussions.
+This work was supported by [DWH GRANT NUMBERS].
 
 Everything in this project, including this document itself, is
 available at \giturl.  If you want this exact version, clone at git
