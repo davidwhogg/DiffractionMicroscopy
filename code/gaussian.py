@@ -184,8 +184,8 @@ if __name__ == "__main__":
     Ps = model.get_Ps() # force construction of sampling
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
 
-    for log2NK in np.arange(12, 18):
-        for log2K in np.arange(7,9):
+    for log2NK in np.arange(5, 18):
+        for log2K in np.arange(0,9):
             log2N = log2NK - log2K
             if log2N < 2:
                 break
