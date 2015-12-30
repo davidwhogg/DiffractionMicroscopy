@@ -12,10 +12,10 @@ Copyright 2015 David W. Hogg (NYU).
 ## Comments:
 - I hard-coded some 2x2 linear algebra for speed.
 """
-
 import numpy as np
 import scipy.optimize as op
 from scipy.misc import logsumexp
+import glob
 import pickle as cp
 
 if True:
@@ -177,50 +177,59 @@ def read_pickle_file(fn):
     fd.close()
     return stuff
 
+def make_and_fit_one_model(model, log2NK, log2K, iteration):
+    log2N = log2NK - log2K
+    prefix = "{:02d}_{:02d}_{:02d}".format(log2N,log2K,iteration)
+    picklefn = "model_"+prefix+".pkl"
+    if log2N < 2:
+        print(prefix, "is an absurd case; skipping")
+        return None # don't do absurd cases
+    if len(glob.glob(picklefn)) > 0:
+        print(prefix, "already exists; skipping")
+        return None # noclobber
+    print("starting run", prefix)
+
+    # make fake data
+    np.random.seed((iteration + 23) * log2NK)
+    data = make_fake_data(N=2**log2N, K=2**log2K)
+    model.set_data(data)
+
+    # initialize empirically
+    empvar = np.mean(data * data)
+    x0 = np.log(1. / np.array([1.1 * empvar, empvar, 0.9 * empvar]))
+    x0 = np.sort(x0)
+    
+    # optimize
+    direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
+    def bar(x): print(prefix, x, np.exp(-x))
+    x1 = op.fmin_powell(model, x0, callback=bar, direc=direc, xtol=1.e-3, ftol=1.e-5)
+    x1 = np.sort(x1)
+    x2 = op.fmin_powell(model, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
+    x2 = np.sort(x2)
+
+    # check size of P sampling
+    sixf = np.zeros(6)
+    sixf[0] = model(x2[[0,1,2]])
+    sixf[1] = model(x2[[1,2,0]])
+    sixf[2] = model(x2[[2,0,1]])
+    sixf[3] = model(x2[[2,1,0]])
+    sixf[4] = model(x2[[1,0,2]])
+    sixf[5] = model(x2[[0,2,1]])
+
+    # save
+    model.set_ivar_from_vector(x2) # restore final answer
+    pickle_to_file(picklefn, (model, x0, x1, x2, sixf))
+    print(prefix, "start",  x0, np.exp(-x0), model(x0))
+    print(prefix, "middle", x1, np.exp(-x1), model(x1))
+    print(prefix, "end",    x2, np.exp(-x2), model(x2))
+    print(prefix, "badness of the sampling:", np.std(sixf) / np.sqrt(2 ** log2N))
+    return None
+
 if __name__ == "__main__":
     np.random.seed(42)
-
     model = GaussianMolecule()
     Ps = model.get_Ps() # force construction of sampling
-    direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
-
-    for log2NK in np.arange(5, 18):
-        for log2K in np.arange(0,9):
-            log2N = log2NK - log2K
-            if log2N < 2:
-                break
-            prefix = "{:02d}_{:02d}".format(log2N,log2K)
-            print("starting run", prefix)
-
-            # make fake data
-            data = make_fake_data(N=2**log2N, K=2**log2K)
-            model.set_data(data)
-
-            # initialize empirically
-            empvar = np.mean(data * data)
-            x0 = np.log(1. / np.array([1.1 * empvar, empvar, 0.9 * empvar]))
-            x0 = np.sort(x0)
-
-            # optimize
-            def bar(x): print(prefix, x, np.exp(-x))
-            x1 = op.fmin_powell(model, x0, callback=bar, direc=direc, xtol=1.e-3, ftol=1.e-5)
-            x1 = np.sort(x1)
-            x2 = op.fmin_powell(model, x1, callback=bar, direc=direc, xtol=1.e-5, ftol=1.e-5)
-            x2 = np.sort(x2)
-
-            # check size of P sampling
-            sixf = np.zeros(6)
-            sixf[0] = model(x2[[0,1,2]])
-            sixf[1] = model(x2[[1,2,0]])
-            sixf[2] = model(x2[[2,0,1]])
-            sixf[3] = model(x2[[2,1,0]])
-            sixf[4] = model(x2[[1,0,2]])
-            sixf[5] = model(x2[[0,2,1]])
-
-            # save
-            model.set_ivar_from_vector(x2) # restore final answer
-            pickle_to_file("model_"+prefix+".pkl", (model, x0, x1, x2, sixf))
-            print(prefix, "start",  x0, np.exp(-x0), model(x0))
-            print(prefix, "middle", x1, np.exp(-x1), model(x1))
-            print(prefix, "end",    x2, np.exp(-x2), model(x2))
-            print(prefix, "badness of the sampling:", np.std(sixf) / np.sqrt(2 ** log2N))
+    for log2NK in [12, 16]:
+        for iteration in range(20):
+            for log2K in np.arange(0,9):
+                make_and_fit_one_model(model, log2NK, log2K, iteration)
