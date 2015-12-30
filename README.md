@@ -9,7 +9,8 @@ This project is heavily influenced by discussions with
 - Charlie Epstein (Penn)
 - Leslie Greengard (SCDA) (NYU)
 - Jeremy Magland (SCDA)
-This project depends on a great stack of open-source software:
+
+This project depends on a great stack of *open-source software:*
 - Python3
 - numpy
 - scipy
