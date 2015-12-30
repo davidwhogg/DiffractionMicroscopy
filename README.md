@@ -4,6 +4,11 @@ Inferring an object from it's diffraction illumination pattern.
 ## Authors
 - David W. Hogg (NYU CCPP) (NYU CDS) (Simons SCDA)
 
+## License
+Copyright 2015 David W. Hogg.
+**DifractionMicroscopy** is open-source software with an **MIT License**.
+See the file `LICENSE` for details.
+
 ## Acknowledgements
 This project is heavily influenced by discussions with
 - Charlie Epstein (Penn)
@@ -12,14 +17,8 @@ This project is heavily influenced by discussions with
 
 This project depends on a great stack of *open-source software:*
 - Python3
-- numpy
-- scipy
-- matplotlib
-
-## License
-Copyright 2015 David W. Hogg.
-**DifractionMicroscopy** is open-source software with an **MIT License**.
-See the file `LICENSE` for details.
+- numpy, scipy, and matplotlib
+- TeX and LaTeX
 
 ## Projects
 - Infer the real-space or full complex FT from a (noisy, censored)
