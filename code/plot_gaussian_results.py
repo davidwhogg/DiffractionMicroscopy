@@ -7,25 +7,28 @@ import glob
 import numpy as np
 import pickle as cp
 import pylab as plt
+from gaussian import *
 
 Truth = 1. / np.array([47., 13., 11.]) # MUST BE ALIGNED WITH gaussian.py
 
 def read_all_pickle_files():
-    fns = glob.glob("./data_??_??.pkl")
+    """
+    Must be synchronized strictly with `gaussian.py`.
+    """
+    fns = glob.glob("./model_??_??.pkl")
     M = len(fns)
     Ns = np.zeros(M).astype(int)
     Ks = np.zeros(M).astype(int)
-    ivarss = np.zeros((M,3))
+    ivars = np.zeros((M,3))
     sixfs = np.zeros((M,6))
     for i,fn in enumerate(fns):
-        data, Ps, x0, x1, x2, sixf = read_pickle_file(fn)
-        N, K, two = data.shape
-        assert two == 2
+        model, x0, x1, x2, sixf = read_pickle_file(fn)
+        N, K = model.N, model.K
         Ns[i] = N
         Ks[i] = K
-        ivarss[i] = np.exp(x2)
+        ivars[i] = np.exp(x2)
         sixfs[i] = sixf
-    return Ns, Ks, ivarss, sixfs
+    return Ns, Ks, ivars, sixfs
 
 def read_pickle_file(fn):
     fd = open(fn, "rb")
@@ -54,8 +57,8 @@ def divergence(iv1, iv2):
     """
     return 0.5 * (np.sum(iv1 / iv2) + np.sum(iv2 / iv1) - 6)
 
-def plot_divergences(Ns, Ks, ivarss):
-    divs = np.array([divergence(ivars, Truth) for ivars in ivarss])
+def plot_divergences(Ns, Ks, ivars):
+    divs = np.array([divergence(ivar, Truth) for ivar in ivars])
     plt.clf()
     plt.scatter(Ns, Ks, c=np.log10(divs), s=200, cmap="gray")
     cb = plt.colorbar()
@@ -69,7 +72,7 @@ def plot_divergences(Ns, Ks, ivarss):
     return None
 
 def plot_sampling_badnesses(Ns, Ks, sixfs):
-    badnesses = np.max(sixfs, axis=1) - np.min(sixfs, axis=1)
+    badnesses = np.std(sixfs, axis=1) / np.sqrt(Ns)
     plt.clf()
     plt.scatter(Ns, Ks, c=np.log10(badnesses), s=200, cmap="gray")
     cb = plt.colorbar()
@@ -83,6 +86,6 @@ def plot_sampling_badnesses(Ns, Ks, sixfs):
     return None
 
 if __name__ == "__main__":
-    Ns, Ks, ivarss, sixfs = read_all_pickle_files()
-    plot_divergences(Ns, Ks, ivarss)
+    Ns, Ks, ivars, sixfs = read_all_pickle_files()
+    plot_divergences(Ns, Ks, ivars)
     plot_sampling_badnesses(Ns, Ks, sixfs)
