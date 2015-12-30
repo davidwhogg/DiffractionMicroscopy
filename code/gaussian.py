@@ -18,7 +18,7 @@ import scipy.optimize as op
 from scipy.misc import logsumexp
 import pickle as cp
 
-if False:
+if True:
     from multiprocessing import Pool
     p = Pool(8)
     pmap = p.map
@@ -46,7 +46,7 @@ class GaussianMolecule():
         return None
 
     def get_data(self):
-        assert data is not None
+        assert self.data is not None
         return self.data
 
     def set_ivar(self, ivar):
@@ -218,8 +218,9 @@ if __name__ == "__main__":
             sixf[5] = model(x2[[0,2,1]])
 
             # save
+            model.set_ivar_from_vector(x2) # restore final answer
             pickle_to_file("model_"+prefix+".pkl", (model, x0, x1, x2, sixf))
             print(prefix, "start",  x0, np.exp(-x0), model(x0))
             print(prefix, "middle", x1, np.exp(-x1), model(x1))
             print(prefix, "end",    x2, np.exp(-x2), model(x2))
-            print(prefix, "badness of the sampling:", np.max(sixf) - np.min(sixf))
+            print(prefix, "badness of the sampling:", np.std(sixf) / np.sqrt(2 ** log2N))
