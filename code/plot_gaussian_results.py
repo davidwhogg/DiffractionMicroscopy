@@ -72,15 +72,17 @@ def plot_data(model, sampling=False):
         prefix = "data_" + prefix
     plt.figure(figsize=(12,6))
     plt.clf()
-    plt.subplots_adjust(bottom=0.05, top=0.95, left=0.05, right=0.95,
+    plt.subplots_adjust(bottom=0.06, top=0.94, left=0.06, right=0.94,
                         wspace=0.25, hspace=0.25)
     nex = np.min((18, model.N))
     for n in range(nex):
-        plt.subplot(3,6,n+1)
+        plt.subplot(3, 6, n+1)
+        plt.xticks(rotation=45)
+        plt.yticks(rotation=45)
         plot_datum(model, n)
         if sampling:
             plot_posterior_sampling(model, n)
-        if (n+1) != 13:
+        if (n+1) != 13: # magic
             plt.gca().get_xaxis().set_ticklabels([])
             plt.gca().get_yaxis().set_ticklabels([])
         plt.axis("equal")
