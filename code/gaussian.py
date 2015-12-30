@@ -178,8 +178,8 @@ def read_pickle_file(fn):
     return stuff
 
 if __name__ == "__main__":
+    np.random.seed(42)
 
-    np.random.seed(23)
     model = GaussianMolecule()
     Ps = model.get_Ps() # force construction of sampling
     direc = np.array([[1., 1., 1.], [1., 0., -1.], [-1., 2., -1.]]) / 10.
@@ -193,7 +193,6 @@ if __name__ == "__main__":
             print("starting run", prefix)
 
             # make fake data
-            np.random.seed(42)
             data = make_fake_data(N=2**log2N, K=2**log2K)
             model.set_data(data)
 

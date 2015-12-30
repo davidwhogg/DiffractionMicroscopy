@@ -30,12 +30,6 @@ def read_all_pickle_files():
         sixfs[i] = sixf
     return Ns, Ks, ivars, sixfs
 
-def read_pickle_file(fn):
-    fd = open(fn, "rb")
-    stuff = cp.load(fd)
-    fd.close()
-    return stuff
-
 def show_data(samples, prefix):
     plt.clf()
     nex = np.min((16, len(samples)))
@@ -72,11 +66,11 @@ def plot_divergences(Ns, Ks, ivars):
     return None
 
 def plot_sampling_badnesses(Ns, Ks, sixfs):
-    badnesses = np.std(sixfs, axis=1) / np.sqrt(Ns)
+    badnesses = np.std(sixfs, axis=1) / np.sqrt(Ns) # per-image; hence sqrt(N)
     plt.clf()
     plt.scatter(Ns, Ks, c=np.log10(badnesses), s=200, cmap="gray")
     cb = plt.colorbar()
-    cb.set_label("$\log_{10}$ sampling badness")
+    cb.set_label("$\log_{10}$ per-image sampling badness")
     plt.loglog()
     plt.xlim(np.min(Ns) / 2, np.max(Ns) * 2)
     plt.ylim(np.min(Ks) / 2, np.max(Ks) * 2)
