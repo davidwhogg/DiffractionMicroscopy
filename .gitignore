@@ -2,3 +2,5 @@
 *.pdf
 *.pkl
 *.png
+*.pyc
+__pycache__
