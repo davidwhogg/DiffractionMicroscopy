@@ -11,13 +11,16 @@
 % -----------
 
 \documentclass[12pt]{article}
-\usepackage{amsmath, amssymb, mathrsfs, url}
+\usepackage{amsmath, amssymb, mathrsfs, url, graphicx}
 \input{vc}
 
 % useless formatting
 \linespread{1.08333} % 10/13 spacing
 \setlength{\parindent}{2\baselineskip}\addtolength{\parindent}{-1.25ex}
 \setlength{\parskip}{0ex}
+\newcommand{\hoggcaption}[1]{\caption{\textsf{#1}}}
+\renewcommand{\thefigure}{\textsf{\arabic{figure}}}
+\renewcommand{\figurename}{\textsf{Figure}}
 
 % text definitions
 \newcommand{\doi}[1]{{\footnotesize \url{http://doi.org/#1}}}
@@ -179,11 +182,23 @@ constructed from two orthonormal vectors, so it really only has three
 degrees of freedom, which correspond to the Euler angles.
 Some example artificial data, made from random slices of an
 anisotropic 3-d Gaussian, are shown in
-\figurename~\ref{fig:exampledata}.
-\begin{figure}[p]
-~[DWH: FIGURE HERE]~
-\caption{Some example artificial data, made from random slices of an
-anisotropic 3-d Gaussian.\label{fig:exampledata}}
+{\figurename s}~\ref{fig:exampledata8} to \ref{fig:exampledata0}.
+\begin{figure}[!htp]
+\includegraphics[width=\textwidth]{data_08_08.png}
+\hoggcaption{Some example artificial data, from a data set made with
+  $N=256$ images, each with $K=256$ photons, random Euler angles, and
+  an anisotropic 3-d Gaussian with axis-aligned variances $(47, 13,
+  11)$.\label{fig:exampledata8}}
+\end{figure}
+\begin{figure}[!htp]
+\includegraphics[width=\textwidth]{data_12_04.png}
+\hoggcaption{Same as \figurename~\ref{fig:exampledata8} but from a data set made with
+  $N=4096$ images, each with $K=16$ photons.\label{fig:exampledata4}}
+\end{figure}
+\begin{figure}[!htp]
+\includegraphics[width=\textwidth]{data_16_00.png}
+\hoggcaption{Same as \figurename~\ref{fig:exampledata8} but from a data set made with
+  $N=65536$ images, each with $K=1$ photon!\label{fig:exampledata0}}
 \end{figure}
 
 The question is:
