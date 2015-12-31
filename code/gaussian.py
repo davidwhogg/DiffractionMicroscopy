@@ -3,8 +3,6 @@ This file is part of the DiffractionMicroscopy project.
 Copyright 2015 David W. Hogg (NYU).
 
 ## Bugs:
-- I need to make the likelihood_one function pickleable and turn on multiprocessing.
-- I ought to make the model a Class that is callable.
 - I ought to cache (but carefully) previously called marginalized likelihoods b/c Powell sux.
 -- The cache will get destroyed when the data are changed.
 -- The cache will get destroyed when the orientation sampling is changed.
@@ -15,7 +13,7 @@ Copyright 2015 David W. Hogg (NYU).
 import numpy as np
 import scipy.optimize as op
 from scipy.misc import logsumexp
-import glob
+import os, errno, glob
 import pickle as cp
 
 if True:
@@ -177,10 +175,23 @@ def read_pickle_file(fn):
     fd.close()
     return stuff
 
+def mkdir_p(path):
+    """
+    This is copied from http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
 def make_and_fit_one_model(model, log2NK, log2K, iteration):
     log2N = log2NK - log2K
+    dirname = "./{:02d}".format(iteration)
+    mkdir_p(dirname)
     prefix = "{:02d}_{:02d}_{:02d}".format(log2N,log2K,iteration)
-    picklefn = "model_"+prefix+".pkl"
+    picklefn = dirname + "/model_" + prefix + ".pkl"
     if log2N < 2:
         print(prefix, "is an absurd case; skipping")
         return None # don't do absurd cases
@@ -188,6 +199,9 @@ def make_and_fit_one_model(model, log2NK, log2K, iteration):
         print(prefix, "already exists; skipping")
         return None # noclobber
     print("starting run", prefix)
+    
+    # lay down a "lock file"
+    pickle_to_file(picklefn, 0.)
 
     # make fake data
     np.random.seed((iteration + 23) * log2NK)
