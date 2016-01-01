@@ -244,6 +244,6 @@ if __name__ == "__main__":
     model = GaussianMolecule()
     Ps = model.get_Ps() # force construction of sampling
     for log2NK in [12, 16]:
-        for iteration in range(20):
+        for iteration in range(32):
             for log2K in np.arange(0,9):
                 make_and_fit_one_model(model, log2NK, log2K, iteration)
