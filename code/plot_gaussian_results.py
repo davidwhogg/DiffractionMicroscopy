@@ -34,8 +34,11 @@ def read_all_pickle_files(log2NK):
         for i,fn in enumerate(fns):
             iteration = int(fn[2:4])
             print(fn, fn[2:4], iteration)
+            try:
+                model, x0, x1, x2, sixf = read_pickle_file(fn)
+            except: # DFM would be upset here
+                continue
             iterations.append(iteration)
-            model, x0, x1, x2, sixf = read_pickle_file(fn)
             models.append(model)
             N, K = model.N, model.K
             Ns.append(N)
@@ -112,8 +115,8 @@ def plot_divergences(Ns, Ks, ivars):
     mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
     medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
     plt.clf()
-    plt.plot(Ks[small], divs[small],  "ko", ms=10, alpha=0.5, mfc="none")
-    plt.plot(Ks[big],   divs[big],    "ko", ms=15, alpha=0.5, mfc="none")
+    plt.plot(Ks[small], divs[small],  "ko", ms=10, alpha=0.25, mec="none", mfc="0.5")
+    plt.plot(Ks[big],   divs[big],    "ko", ms=15, alpha=0.25, mec="none", mfc="0.5")
     plt.plot(Ksteps, mediansmalldivs, "ko", ms=10)
     plt.plot(Ksteps, medianbigdivs,   "ko", ms=15)
     plt.loglog()
@@ -136,13 +139,14 @@ if __name__ == "__main__":
     iterations = np.append(iterations, iterations2)
     print(len(models), Ns.shape, Ks.shape, ivars.shape)
 
+    # make summary plots
+    plot_divergences(Ns, Ks, ivars)
+
     # make data plots
     for log2N, log2K in [(16, 0), (12, 4), (8, 8)]:
         thismodel = (np.where((Ns == 2 ** log2N) * (Ks == 2 ** log2K) * (iterations == 0))[0])[0]
         model = models[thismodel]
         print(model.get_ivar(), ivars[thismodel])
-#        plot_data(model)
-#        plot_data(model, sampling=True)
+        plot_data(model)
+        plot_data(model, sampling=True)
 
-    # make summary plots
-    plot_divergences(Ns, Ks, ivars)
