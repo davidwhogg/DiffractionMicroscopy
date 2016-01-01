@@ -310,10 +310,38 @@ DWH: Prediction: The effective number of samples gets smaller as the
 number of photons per image increases.  The need for denser
 $\phi$-space sampling increases as the number of photons per image
 increases.
-
 DWH: Prediction: The only $K=1$ images that have significant angle
 information are images with photons at anomalously large radius or
 anomalously small radius.
+DWH: These predictions are confirmed in
+\figurename~\ref{fig:sampling8}, \ref{fig:sampling4}, and \ref{fig:sampling0},
+which show the posterior beliefs about individual-image 2-d variance
+tensors, given a setting for the 3-d variance tensor.
+\begin{figure}[!tbp]
+\includegraphics[width=\textwidth]{sampling_08_08.png}
+\hoggcaption{The same subset of artificial data as shown in
+  \figurename~\ref{fig:exampledata8},
+  but now with a posterior sampling of 2-d variance tensors overplotted in red.
+  The posterior sampling is drawn with the 3-d variance tensor set to the
+  maximum-marginalized-likelihood value for the full data set,
+  which in this case is
+  $N=256$ images, each with $K=256$ photons, random Euler angles, and
+  an anisotropic 3-d Gaussian with axis-aligned variances
+  $\setof{\sigma^2_d}_{d=1}^3 = (47, 13, 11)$.
+  The variance tensors are depicted by two-sigma contour ellipses.\label{fig:sampling8}}
+\end{figure}
+\begin{figure}[!tbp]
+\includegraphics[width=\textwidth]{sampling_12_04.png}
+\hoggcaption{Same as \figurename~\ref{fig:sampling8} but for the data shown in
+  \figurename~\ref{fig:exampledata4}
+  ($N=4096$ images, each with $K=16$ photons).\label{fig:sampling4}}
+\end{figure}
+\begin{figure}[!tbp]
+\includegraphics[width=\textwidth]{sampling_16_00.png}
+\hoggcaption{Same as \figurename~\ref{fig:sampling8} but for the data shown in
+  \figurename~\ref{fig:exampledata0}
+  ($N=65536$ images, each with $K=1$ photon).\label{fig:sampling0}}
+\end{figure}
 
 \paragraph{Effects of wrong orientation priors:}
 DWH: Hello World!
