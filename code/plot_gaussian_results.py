@@ -15,26 +15,33 @@ def hogg_savefig(fn, **kwargs):
     print("writing file", fn)
     return plt.savefig(fn, **kwargs)
 
-def read_all_pickle_files():
+def read_all_pickle_files(log2NK):
     """
     Must be synchronized strictly with `gaussian.py`.
     """
-    fns = glob.glob("./model_??_??.pkl")
-    M = len(fns)
-    Ns = np.zeros(M).astype(int)
-    Ks = np.zeros(M).astype(int)
-    ivars = np.zeros((M,3))
-    sixfs = np.zeros((M,6))
+    Ns = []
+    Ks = []
+    ivars = []
     models = []
-    for i,fn in enumerate(fns):
-        model, x0, x1, x2, sixf = read_pickle_file(fn)
-        models.append(model)
-        N, K = model.N, model.K
-        Ns[i] = N
-        Ks[i] = K
-        ivars[i] = np.exp(x2)
-        sixfs[i] = sixf
-    return models, Ns, Ks, ivars, sixfs
+    iterations = []
+    for log2K in range(0, 9):
+        log2N = log2NK - log2K
+        template = "./??/model_{:02d}_{:02d}_??.pkl".format(log2N, log2K)
+        fns = glob.glob(template)
+        M = len(fns)
+        if M == 0:
+            return None
+        for i,fn in enumerate(fns):
+            iteration = int(fn[2:4])
+            print(fn, fn[2:4], iteration)
+            iterations.append(iteration)
+            model, x0, x1, x2, sixf = read_pickle_file(fn)
+            models.append(model)
+            N, K = model.N, model.K
+            Ns.append(N)
+            Ks.append(K)
+            ivars.append(np.exp(x2))
+    return models, np.array(Ns), np.array(Ks), np.array(ivars), np.array(iterations)
 
 def plot_datum(model, n):
     datum = model.get_datum(n)
@@ -99,41 +106,43 @@ def divergence(iv1, iv2):
 
 def plot_divergences(Ns, Ks, ivars):
     divs = np.array([divergence(ivar, Truth) for ivar in ivars])
+    small = (Ns * Ks) < 5000
+    big = (Ns * Ks) > 60000
+    Ksteps = 2. ** np.arange(0, 9)
+    mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
+    medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
     plt.clf()
-    plt.scatter(Ns, Ks, c=np.log10(divs), s=200, cmap="gray")
-    cb = plt.colorbar()
-    cb.set_label("$\log_{10}$ divergence from Truth")
+    plt.plot(Ks[small], divs[small],  "ko", ms=10, alpha=0.5, mfc="none")
+    plt.plot(Ks[big],   divs[big],    "ko", ms=15, alpha=0.5, mfc="none")
+    plt.plot(Ksteps, mediansmalldivs, "ko", ms=10)
+    plt.plot(Ksteps, medianbigdivs,   "ko", ms=15)
     plt.loglog()
-    plt.xlim(np.min(Ns) / 2, np.max(Ns) * 2)
-    plt.ylim(np.min(Ks) / 2, np.max(Ks) * 2)
-    plt.xlabel("number of images $N$")
-    plt.ylabel("number of photons per image $K$")
+    plt.xlim(np.min(Ks) / 2, np.max(Ks) * 2)
+    plt.xlabel("number of photons per image $K$")
+    plt.ylabel("divergence from the Truth")
     hogg_savefig("divergences.png")
-    return None
-
-def plot_sampling_badnesses(Ns, Ks, sixfs):
-    badnesses = np.std(sixfs, axis=1) / np.sqrt(Ns) # per-image; hence sqrt(N)
-    plt.clf()
-    plt.scatter(Ns, Ks, c=np.log10(badnesses), s=200, cmap="gray")
-    cb = plt.colorbar()
-    cb.set_label("$\log_{10}$ per-image sampling badness")
-    plt.loglog()
-    plt.xlim(np.min(Ns) / 2, np.max(Ns) * 2)
-    plt.ylim(np.min(Ks) / 2, np.max(Ks) * 2)
-    plt.xlabel("number of images $N$")
-    plt.ylabel("number of photons per image $K$")
-    hogg_savefig("badnesses.png")
     return None
 
 if __name__ == "__main__":
     np.random.seed(23)
-    models, Ns, Ks, ivars, sixfs = read_all_pickle_files()
 
+    # read data
+    models,  Ns,  Ks,  ivars,  iterations  = read_all_pickle_files(12)
+    models2, Ns2, Ks2, ivars2, iterations2 = read_all_pickle_files(16)
+    models = np.append(models, models2)
+    Ns = np.append(Ns, Ns2)
+    Ks = np.append(Ks, Ks2)
+    ivars = np.vstack((ivars, ivars2))
+    iterations = np.append(iterations, iterations2)
+    print(len(models), Ns.shape, Ks.shape, ivars.shape)
+
+    # make data plots
     for log2N, log2K in [(16, 0), (12, 4), (8, 8)]:
-        thismodel = (np.where((Ns == 2 ** log2N) * (Ks == 2 ** log2K))[0])[0]
+        thismodel = (np.where((Ns == 2 ** log2N) * (Ks == 2 ** log2K) * (iterations == 0))[0])[0]
         model = models[thismodel]
-        plot_data(model)
-        plot_data(model, sampling=True)
+        print(model.get_ivar(), ivars[thismodel])
+#        plot_data(model)
+#        plot_data(model, sampling=True)
 
+    # make summary plots
     plot_divergences(Ns, Ks, ivars)
-    plot_sampling_badnesses(Ns, Ks, sixfs)
