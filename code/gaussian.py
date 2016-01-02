@@ -204,7 +204,10 @@ def make_and_fit_one_model(model, log2NK, log2K, iteration):
     pickle_to_file(picklefn, 0.)
 
     # make fake data
-    np.random.seed((iteration + 23) * log2NK)
+    if iteration == 0:
+        np.random.seed(23) # for testing purposes: identical P_n
+    else:
+        np.random.seed(3**log2N + 5**log2K + 2**iteration) # repeatability
     data = make_fake_data(N=2**log2N, K=2**log2K)
     model.set_data(data)
 
@@ -240,7 +243,7 @@ def make_and_fit_one_model(model, log2NK, log2K, iteration):
     return None
 
 if __name__ == "__main__":
-    np.random.seed(42)
+    np.random.seed(42) # repeatability
     model = GaussianMolecule()
     Ps = model.get_Ps() # force construction of sampling
     for log2NK in [12, 16]:

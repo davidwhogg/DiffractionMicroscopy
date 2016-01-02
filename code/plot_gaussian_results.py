@@ -115,8 +115,8 @@ def plot_divergences(Ns, Ks, ivars):
     mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
     medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
     plt.clf()
-    plt.plot(Ks[small], divs[small],  "ko", ms=10, alpha=0.25, mec="none", mfc="0.5")
-    plt.plot(Ks[big],   divs[big],    "ko", ms=15, alpha=0.25, mec="none", mfc="0.5")
+    plt.plot(Ks[small], divs[small],  "k_", ms=10, alpha=0.5)
+    plt.plot(Ks[big],   divs[big],    "k_", ms=15, alpha=0.5)
     plt.plot(Ksteps, mediansmalldivs, "ko", ms=10)
     plt.plot(Ksteps, medianbigdivs,   "ko", ms=15)
     plt.loglog()
