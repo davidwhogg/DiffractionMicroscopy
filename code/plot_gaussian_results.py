@@ -115,12 +115,15 @@ def plot_divergences(Ns, Ks, ivars):
     mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
     medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
     plt.clf()
-    plt.plot(Ks[small], divs[small],  "k_", ms=10, alpha=0.5)
-    plt.plot(Ks[big],   divs[big],    "k_", ms=15, alpha=0.5)
-    plt.plot(Ksteps, mediansmalldivs, "ko", ms=10)
-    plt.plot(Ksteps, medianbigdivs,   "ko", ms=15)
+    plt.axhline(np.median(divs[small]), color="k", alpha=0.25)
+    plt.axhline(np.median(divs[big]  ), color="k", alpha=0.25)
+    plt.plot(Ks[small], divs[small],  "k_", ms= 8, alpha=0.5)
+    plt.plot(Ks[big],   divs[big],    "k_", ms=16, alpha=0.5)
+    plt.plot(Ksteps, mediansmalldivs, "k_", ms= 8, mew=4)
+    plt.plot(Ksteps, medianbigdivs,   "k_", ms=16, mew=4)
     plt.loglog()
     plt.xlim(np.min(Ks) / 2, np.max(Ks) * 2)
+    plt.ylim(np.median(divs[big]) / 100., np.median(divs[small]) * 100.)
     plt.xlabel("number of photons per image $K$")
     plt.ylabel("divergence from the Truth")
     hogg_savefig("divergences.png")
@@ -141,6 +144,8 @@ if __name__ == "__main__":
 
     # make summary plots
     plot_divergences(Ns, Ks, ivars)
+
+if False:
 
     # make data plots
     for log2N, log2K in [(16, 0), (12, 4), (8, 8)]:
