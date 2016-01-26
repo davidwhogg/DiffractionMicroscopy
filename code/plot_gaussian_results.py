@@ -30,7 +30,7 @@ def read_all_pickle_files(log2NK):
         fns = glob.glob(template)
         M = len(fns)
         if M == 0:
-            return None
+            continue
         for i,fn in enumerate(fns):
             iteration = int(fn[2:4])
             print(fn, fn[2:4], iteration)
@@ -107,28 +107,35 @@ def divergence(iv1, iv2):
     """
     return 0.5 * (np.sum(iv1 / iv2) + np.sum(iv2 / iv1) - 6)
 
+def _hoggmedian(foo):
+    if len(foo) == 0:
+        return np.nan
+    else:
+        return np.median(foo)
+
 def plot_divergences(Ns, Ks, ivars):
     divs = np.array([divergence(ivar, Truth) for ivar in ivars])
     small = (Ns * Ks) < 300
     med = ((Ns * Ks) > 3000) * ((Ns * Ks) < 5000)
     big = (Ns * Ks) > 60000
     Ksteps = 2. ** np.arange(0, 9)
-    mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
-    medianmeddivs =   [np.median((divs[med])[np.isclose(Ks[med], Kstep)]) for Kstep in Ksteps]
-    medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
+    mediansmalldivs = np.array([_hoggmedian((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps])
+    medianmeddivs =   np.array([_hoggmedian((divs[med])[np.isclose(Ks[med], Kstep)]) for Kstep in Ksteps])
+    medianbigdivs =   np.array([_hoggmedian((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps])
     plt.clf()
     plt.axhline(np.median(divs[small]), color="k", alpha=0.25)
     plt.axhline(np.median(divs[med]  ), color="k", alpha=0.25)
     plt.axhline(np.median(divs[big]  ), color="k", alpha=0.25)
-    plt.plot(Ks[small], divs[small],  "k_", ms= 8, alpha=0.5)
-    plt.plot(Ks[med],   divs[med],    "k_", ms=13, alpha=0.5)
+    plt.plot(Ks[small], divs[small],  "k_", ms= 6, alpha=0.5)
+    plt.plot(Ks[med],   divs[med],    "k_", ms=12, alpha=0.5)
     plt.plot(Ks[big],   divs[big],    "k_", ms=18, alpha=0.5)
-    plt.plot(Ksteps, mediansmalldivs, "k_", ms= 8, mew=4)
-    plt.plot(Ksteps, medianmeddivs,   "k_", ms=13, mew=4)
+    good = np.isfinite(mediansmalldivs)
+    plt.plot(Ksteps[good], mediansmalldivs[good], "k_", ms= 6, mew=4)
+    plt.plot(Ksteps, medianmeddivs,   "k_", ms=12, mew=4)
     plt.plot(Ksteps, medianbigdivs,   "k_", ms=18, mew=4)
     plt.loglog()
-    plt.xlim(np.min(Ks) / 2, np.max(Ks) * 2)
-    plt.ylim(np.median(divs[big]) / 100., np.median(divs[small]) * 100.)
+    plt.xlim(np.min(Ks) / 1.5, np.max(Ks) * 1.5)
+    plt.ylim(np.nanmedian(divs[big]) / 30., np.nanmedian(divs[small]) * 30.)
     plt.xlabel("number of photons per image $K$")
     plt.ylabel("divergence from the Truth")
     hogg_savefig("divergences.png")
