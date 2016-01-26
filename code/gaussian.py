@@ -246,7 +246,7 @@ if __name__ == "__main__":
     np.random.seed(42) # repeatability
     model = GaussianMolecule()
     Ps = model.get_Ps() # force construction of sampling
-    for log2NK in [12, 16]:
+    for log2NK in [8, 12, 16]:
         for iteration in range(32):
             for log2K in np.arange(0,9):
                 make_and_fit_one_model(model, log2NK, log2K, iteration)

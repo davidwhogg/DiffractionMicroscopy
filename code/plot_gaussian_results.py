@@ -109,18 +109,23 @@ def divergence(iv1, iv2):
 
 def plot_divergences(Ns, Ks, ivars):
     divs = np.array([divergence(ivar, Truth) for ivar in ivars])
-    small = (Ns * Ks) < 5000
+    small = (Ns * Ks) < 300
+    med = ((Ns * Ks) > 3000) * ((Ns * Ks) < 5000)
     big = (Ns * Ks) > 60000
     Ksteps = 2. ** np.arange(0, 9)
     mediansmalldivs = [np.median((divs[small])[np.isclose(Ks[small], Kstep)]) for Kstep in Ksteps]
+    medianmeddivs =   [np.median((divs[med])[np.isclose(Ks[med], Kstep)]) for Kstep in Ksteps]
     medianbigdivs =   [np.median((divs[big])[np.isclose(Ks[big], Kstep)]) for Kstep in Ksteps]
     plt.clf()
     plt.axhline(np.median(divs[small]), color="k", alpha=0.25)
+    plt.axhline(np.median(divs[med]  ), color="k", alpha=0.25)
     plt.axhline(np.median(divs[big]  ), color="k", alpha=0.25)
     plt.plot(Ks[small], divs[small],  "k_", ms= 8, alpha=0.5)
-    plt.plot(Ks[big],   divs[big],    "k_", ms=16, alpha=0.5)
+    plt.plot(Ks[med],   divs[med],    "k_", ms=13, alpha=0.5)
+    plt.plot(Ks[big],   divs[big],    "k_", ms=18, alpha=0.5)
     plt.plot(Ksteps, mediansmalldivs, "k_", ms= 8, mew=4)
-    plt.plot(Ksteps, medianbigdivs,   "k_", ms=16, mew=4)
+    plt.plot(Ksteps, medianmeddivs,   "k_", ms=13, mew=4)
+    plt.plot(Ksteps, medianbigdivs,   "k_", ms=18, mew=4)
     plt.loglog()
     plt.xlim(np.min(Ks) / 2, np.max(Ks) * 2)
     plt.ylim(np.median(divs[big]) / 100., np.median(divs[small]) * 100.)
@@ -135,11 +140,17 @@ if __name__ == "__main__":
     # read data
     models,  Ns,  Ks,  ivars,  iterations  = read_all_pickle_files(12)
     models2, Ns2, Ks2, ivars2, iterations2 = read_all_pickle_files(16)
+    models3, Ns3, Ks3, ivars3, iterations3 = read_all_pickle_files(8)
     models = np.append(models, models2)
+    models = np.append(models, models3)
     Ns = np.append(Ns, Ns2)
+    Ns = np.append(Ns, Ns3)
     Ks = np.append(Ks, Ks2)
+    Ks = np.append(Ks, Ks3)
     ivars = np.vstack((ivars, ivars2))
+    ivars = np.vstack((ivars, ivars3))
     iterations = np.append(iterations, iterations2)
+    iterations = np.append(iterations, iterations3)
     print(len(models), Ns.shape, Ks.shape, ivars.shape)
 
     # make summary plots
