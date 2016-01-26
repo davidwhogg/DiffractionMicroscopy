@@ -25,7 +25,7 @@
 \newcommand{\hoggcaption}[1]{\caption{\textsf{#1}}}
 \renewcommand{\thefigure}{\textsf{\arabic{figure}}}
 \renewcommand{\figurename}{\textsf{Figure}}
-\newcommand{\equationname}{\textsf{equation}}
+\newcommand{\equationname}{equation}
 
 % text definitions
 \newcommand{\doi}[1]{{\footnotesize \url{http://doi.org/#1}}}
@@ -303,14 +303,14 @@ Gaussians, is:
   S &\equiv& \frac{1}{2}\,\left[\trace(V_1^{-1}\cdot V_2)
                               + \trace(V_2^{-1}\cdot V_1)
                               - 6\right]
-  \quad,
+  \label{eq:div}\quad,
 \end{eqnarray}
 where $V_1$ and $V_2$ are the variance tensors of the two Gaussians
 being compared.
 \begin{figure}[!tbp]
 \includegraphics[width=\textwidth]{divergences.png}
 \caption{The divergences---as defined in
-  \equationname~\ref{eq:div}---between the True Gaussian and the
+  \equationname~(\ref{eq:div})---between the True Gaussian and the
   best-fit Gaussian for a set of different trials.  In each case, the
   thin lines are individual trials, and the thick lines are the median
   across 32 trials at the same number of images $N$ and number of
