@@ -25,6 +25,7 @@
 \newcommand{\hoggcaption}[1]{\caption{\textsf{#1}}}
 \renewcommand{\thefigure}{\textsf{\arabic{figure}}}
 \renewcommand{\figurename}{\textsf{Figure}}
+\newcommand{\equationname}{\textsf{equation}}
 
 % text definitions
 \newcommand{\doi}[1]{{\footnotesize \url{http://doi.org/#1}}}
@@ -306,6 +307,22 @@ Gaussians, is:
 \end{eqnarray}
 where $V_1$ and $V_2$ are the variance tensors of the two Gaussians
 being compared.
+\begin{figure}[!tbp]
+\includegraphics[width=\textwidth]{divergences.png}
+\caption{The divergences---as defined in
+  \equationname~\ref{eq:div}---between the True Gaussian and the
+  best-fit Gaussian for a set of different trials.  In each case, the
+  thin lines are individual trials, and the thick lines are the median
+  across 32 trials at the same number of images $N$ and number of
+  photons per image $K$.  The short lines are trials that have the
+  product $N\,K=256$~photons, the medium-length lines are trials that
+  have $N\,K=4096$~photons, and the long lines are trials that have
+  the product $N\,K=65536$~photons.  The thin grey lines show medians
+  for the three different $N\,K$ values.  The take-home messages are:
+  More photons is better, but it isn't far worse to have $K=1$ photon
+  per image than 64 or 256, so long as the total number $N\,K$ of
+  photons is large.\label{fig:divs}}
+\end{figure}
 
 \paragraph{Information content in low-photon images:}
 DWH: Hello World!
