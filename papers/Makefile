@@ -12,3 +12,4 @@ vc.tex: ../.git/logs/HEAD
 
 %.pdf: %.tex vc.tex
 	${LATEX} $<
+	${LATEX} $<
