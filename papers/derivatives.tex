@@ -1,0 +1,87 @@
+%% This file is part of the DiffractionMicroscopy project
+%% Copyright 2016 David W. Hogg
+
+% To-Do list
+% ----------
+
+% Style notes
+% -----------
+
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb, mathrsfs, hyperref, graphicx}
+\input{vc}
+
+% useless formatting
+\linespread{1.08333} % 10/13 spacing
+\setlength{\parindent}{2\baselineskip}\addtolength{\parindent}{-1.25ex}
+\setlength{\parskip}{0ex}
+\newcommand{\hoggcaption}[1]{\caption{\textsf{#1}}}
+\renewcommand{\thefigure}{\textsf{\arabic{figure}}}
+\renewcommand{\figurename}{\textsf{Figure}}
+\newcommand{\equationname}{equation}
+
+% text definitions
+\newcommand{\doi}[1]{{\footnotesize \url{http://doi.org/#1}}}
+
+% math definitions
+\newcommand{\normal}{\mathscr{N}}
+\newcommand{\Poisson}{\mathscr{P}}
+\newcommand{\sqnorm}[1]{|{#1}|^2}
+\newcommand{\unitvec}[1]{\hat{#1}}
+\newcommand{\ehat}{\unitvec{e}}
+\newcommand{\xhat}{\unitvec{x}}
+\newcommand{\yhat}{\unitvec{y}}
+\newcommand{\zhat}{\unitvec{z}}
+\newcommand{\transpose}{^{\mathsf{T}}}
+\newcommand{\given}{\,|\,}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\dd}{\mathrm{d}}
+\DeclareMathOperator{\trace}{tr}
+
+\begin{document}\sloppy\sloppypar
+
+\section*{\raggedright%
+  Derivatives of the likelihood function (with respect to parameters)
+  for diffraction microscopy with noisy images at unknown orientations.}
+\noindent
+David W. Hogg%
+\footnote{Simons Center for Data Analysis, Simons Foundation}%
+\footnote{Center for Cosmology and Particle Physics, Department of Physics, New York University}%
+\footnote{Center for Data Science, New York University}%
+\footnote{david.hogg@nyu.edu}
+
+\bigskip
+
+\paragraph{Abstract:}
+I write down a likelihood for diffraction microscopy imaging data,
+where each image is of the same molecule, but each image contains a
+small number of photons, and each image is of the molecule at an
+unknown, random orientation.
+In this work, at fixed orientation, the likelihood function is
+parameterized by linear parameters (densities in three-dimensional
+boxels in real space, or Fourier coefficients, or any other linear
+representation), but the likelihood function becomes non-linear in
+those parameters when the orientation is marginalized out.
+Marginalization is performed by a sum over a (random or uniform)
+sampling in orientation space.
+
+\section{introduction}
+
+In diffraction imaging, the fundamental observable is the squared norm
+of the Fourier transform of the object of interest.
+In the noisy regime, the detected photons are independent draws from a
+variable-rate Poisson process, with rate set by the squared norm of
+the Fourier transform (probably censored by a beam stop).
+When the angles are unknown, the detected photons are drawn from a
+mixture of such Poisson processes, with the mixture set by the
+integral over all possible orientations (with some prior).
+
+\section{likelihood function}
+
+foo
+
+\section{derivatives}
+
+bar
+
+\end{document}
