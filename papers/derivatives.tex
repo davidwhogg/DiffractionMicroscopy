@@ -3,7 +3,8 @@
 
 % To-Do list
 % ----------
-% - Write.
+% - Write zeroth draft.
+% - Deal with all HOGG notes.
 
 % Style notes
 % -----------
@@ -23,6 +24,8 @@
 \newcommand{\equationname}{equation}
 
 % math definitions
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\given}{\,|\,}
 \newcommand{\dd}{\mathrm{d}}
 
 \begin{document}\sloppy\sloppypar
@@ -115,11 +118,66 @@ where the $a_m$ are coefficients, the $g_m(x)$ are real-space basis
 functions that linearly sum to make the density, and the
 $\hat{g}_m(k)$ are the Fourier transforms of those basis functions.
 
-Need a terminology for projecting and slicing.
+Photons will be observed at transverse wave numbers $k_\perp$, in the
+lab in the two-dimensional $k$-space perpendicular to the x-ray beam,
+which itself is oriented at angles $\phi$ relative to the molecule.
+That is, there is a 2-vector $k_\perp$ that is related to the full
+3-vector $k$ by a projection and some rotations, which depend on a set
+of three Euler angles, which we denote (as a set) $\phi$.
+The three Euler angles can be thought of as a position on the sphere
+plus an in-plane rotation.
+Or they can be thought of as the three degrees of freedom of
+orientation of a two-dimensional lab-frame $k_\perp$ coordinate system
+with respect to a three-dimensional molecule-frame $k$ coordinate
+system.
+The relationship can be written as
+\begin{eqnarray}
+  k &=& P_\phi \cdot k_\perp
+  \quad ,
+\end{eqnarray}
+where we think of $k$ as a three-element column vector, $P_\phi$ is a
+$3\times 2$ deprojection matrix made up of two orthogonal unit
+3-vectors (which are fully specified by the Euler angles $\phi$), and
+$k_\perp$ is a two-element column vector.
 
-Need a terminology for the parameters and the data.
+If you set the density function $\rho(x)$ (and thus its Fourier
+transform $\hat{\rho}(k)$) and the orientation $\phi$ of the molecule
+with respect to the beam, the probability density of getting a photon
+at observed lab-frame transverse wave number $k_\perp$ is proportional
+to the squared norm of the Fourier transform evaluated at the relevant
+$k$.  That is,
+\begin{eqnarray}
+  p(k_\perp\given\rho,\phi) &\propto& |\hat{\rho}|^2(P_\phi \cdot k_\perp)
+  \\
+  |\hat{\rho}|^2(k) &\equiv& \hat{\rho}(k)\,\hat{\rho}^{\ast}(k)
+  \quad ,
+\end{eqnarray}
+where we have written the squared norm as the complex number times its
+complex conjugate.
 
-Need to write down the probability of the data given the parameters.
+HOGG: Need a terminology for the parameters and the data.
+\begin{eqnarray}
+  y &\equiv& \setof{y_n}_{n=1}^N
+  \\
+  y_n &\equiv& \setof{k_{\perp nq}}_{q=1}^{Q_n}
+  \\
+  \rho &\equiv& \setof{a_m}_{m=1}^M
+  \quad,
+\end{eqnarray}
+
+HOGG: Marginalization.
+\begin{eqnarray}
+  p(y_n\given\rho,\phi) &=& \prod_{q=1}^{Q_n} p(k_{\perp nq}\given\rho,\phi)
+  \\
+  p(y_n\given\rho) &=& \int p(y_n\given\rho,\phi)\,p(\phi)\,\dd\phi
+  \\
+  &\approx& \frac{1}{T}\,\sum_{t=1}^T p(y_n\given\rho,\phi_t)
+  \\
+  p(y\given\rho) &=& \prod_{n=1}^N p(y_n\given\rho)
+  \quad,
+\end{eqnarray}
+
+HOGG: Implementation as logsumexp.
 
 \section{Derivatives}
 
