@@ -3,6 +3,7 @@
 
 % To-Do list
 % ----------
+% - Generalize to photons on the Ewald sphere.
 % - Write zeroth draft.
 % - Deal with all HOGG notes.
 
@@ -148,12 +149,23 @@ to the squared norm of the Fourier transform evaluated at the relevant
 $k$.  That is,
 \begin{eqnarray}
   p(k_\perp\given\rho,\phi) &\propto& |\hat{\rho}|^2(P_\phi \cdot k_\perp)
-  \\
+  \label{eq:rhosquared} \\
   |\hat{\rho}|^2(k) &\equiv& \hat{\rho}(k)\,\hat{\rho}^{\ast}(k)
   \quad ,
 \end{eqnarray}
 where we have written the squared norm as the complex number times its
 complex conjugate.
+
+The fact that equation~(\ref{eq:rhosquared}) contains nothing more
+complicated than a deprojection matrix (no integrals) is a consequence
+of the Fourier slice theoem.
+Equation~(\ref{eq:rhosquared}) embodies the fundamental fact of
+diffraction: The observable is the square of the norm of the Fourier
+transform.
+This formulation also assumes that there is a ``beam stop'' or
+equivalent: The probability density in equation~(\ref{eq:rhosquared})
+only describes diffracted photons, not those (the majority)
+transmitted without deflection.
 
 HOGG: Need a terminology for the parameters and the data.
 \begin{eqnarray}
