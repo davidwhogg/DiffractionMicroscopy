@@ -9,7 +9,7 @@
 
 % Style notes
 % -----------
-% - Always \eqnarray never \equation.
+% - Always eqnarray never equation.
 
 \documentclass[12pt]{article}
 \usepackage{amsmath, amssymb, mathrsfs, hyperref, graphicx}
@@ -151,10 +151,12 @@ $k$.  That is,
   p(k_\perp\given\rho,\phi) &\propto& |\hat{\rho}|^2(P_\phi \cdot k_\perp)
   \label{eq:rhosquared} \\
   |\hat{\rho}|^2(k) &\equiv& \hat{\rho}(k)\,\hat{\rho}^{\ast}(k)
-  \quad ,
+  \\
+  |\hat{\rho}|^2(k) &=& \sum_{m=1}^M\sum_{m'=1}^M a_m\,a_{m'}\,\hat{g}_m(k)\,\hat{g}_{m'}^{\ast}(k)
+  \label{eq:rhosquaredexpansion} \quad ,
 \end{eqnarray}
 where we have written the squared norm as the complex number times its
-complex conjugate.
+complex conjugate, but used the fact that the $a_m$ are real.
 
 The fact that equation~(\ref{eq:rhosquared}) contains nothing more
 complicated than a deprojection matrix (no integrals) is a consequence
@@ -173,27 +175,53 @@ HOGG: Need a terminology for the parameters and the data.
   \\
   y_n &\equiv& \setof{k_{\perp nq}}_{q=1}^{Q_n}
   \\
-  \rho &\equiv& \setof{a_m}_{m=1}^M
+  a &\equiv& \setof{a_m}_{m=1}^M
   \quad,
 \end{eqnarray}
 
 HOGG: Marginalization.
 \begin{eqnarray}
-  p(y_n\given\rho,\phi) &=& \prod_{q=1}^{Q_n} p(k_{\perp nq}\given\rho,\phi)
+  \ln p(y\given a) &=& \sum_{n=1}^N \ln p(y_n\given a)
   \\
-  p(y_n\given\rho) &=& \int p(y_n\given\rho,\phi)\,p(\phi)\,\dd\phi
+  p(y_n\given a) &=& \int p(y_n\given a,\phi)\,p(\phi)\,\dd\phi
   \\
-  &\approx& \frac{1}{T}\,\sum_{t=1}^T p(y_n\given\rho,\phi_t)
+  &\approx& \frac{1}{T}\,\sum_{t=1}^T p(y_n\given a,\phi_t)
   \\
-  p(y\given\rho) &=& \prod_{n=1}^N p(y_n\given\rho)
+  \ln p(y_n\given a) &\approx& \ln\left[\frac{1}{T}\,\sum_{t=1}^T \exp\left[\ln p(y_n\given a,\phi_t)\right]\right]
+  \\
+  \ln p(y_n\given a,\phi_t) &=& \sum_{q=1}^{Q_n} \ln p(k_{\perp nq}\given a,\phi_t)
+  \\
+  &=& \sum_{q=1}^{Q_n} \ln |\hat{\rho}|^2(P_{\phi_t}\cdot k_{\perp nq})
+  \\
+  &=& \sum_{q=1}^{Q_n} \ln\left[ \sum_{m=1}^M\sum_{m'=1}^M a_m\,a_{m'}\,\hat{g}_{ntqm}\,\hat{g}_{ntqm'}^{\ast} \right]
+  \\
+  \hat{g}_{ntqm} &\equiv& \hat{g}_m(P_{\phi_t}\cdot k_{\perp nq})
   \quad,
 \end{eqnarray}
+where...HOGG..., and we
+have dropped constants in the logarithms.
 
 HOGG: Implementation as logsumexp.
 
 \section{Derivatives}
 
-bar
+\begin{eqnarray}
+  \frac{\dd}{\dd a_m}\ln p(y\given a) &=& \sum_{n=1}^N \frac{\dd}{\dd a_m}\ln p(y_n\given a)
+  \\
+  \frac{\dd}{\dd a_m}\ln p(y_n\given a)
+    &=& \frac{\displaystyle
+      \frac{1}{T}\,\sum_{t=1}^T \exp\left[\ln p(y_n\given a,\phi_t)\right]\,\frac{\dd}{\dd a_m}\ln p(y_n\given a,\phi_t)}%
+             {\displaystyle
+      \frac{1}{T}\,\sum_{t=1}^T \exp\left[\ln p(y_n\given a,\phi_t)\right]}
+  \\
+  \frac{\dd}{\dd a_m}\ln p(y_n\given a,\phi_t)
+    &=& \sum_{q=1}^{Q_n} \frac{\displaystyle
+      \sum_{m'=1}^M a_{m'}\,\hat{g}_{ntqm}\,\hat{g}_{ntqm'}^{\ast}}%
+             {\displaystyle
+      \sum_{m''=1}^M\sum_{m'=1}^M a_{m''}\,a_{m'}\,\hat{g}_{ntqm''}\,\hat{g}_{ntqm'}^{\ast}}
+  \quad,
+\end{eqnarray}
+where...HOGG
 
 \section{Tangent space}
 
