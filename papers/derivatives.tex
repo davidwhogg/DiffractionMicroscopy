@@ -216,7 +216,7 @@ HOGG: Implementation as logsumexp.
   \\
   \frac{\dd}{\dd a_m}\ln p(y_n\given a,\phi_t)
     &=& \sum_{q=1}^{Q_n} \frac{\displaystyle
-      \sum_{m'=1}^M a_{m'}\,\hat{g}_{ntqm}\,\hat{g}_{ntqm'}^{\ast}}%
+      \sum_{m'=1}^M a_{m'}\,\left[\hat{g}_{ntqm}\,\hat{g}_{ntqm'}^{\ast}+\hat{g}_{ntqm'}\,\hat{g}_{ntqm}^{\ast}\right]}%
              {\displaystyle
       \sum_{m''=1}^M\sum_{m'=1}^M a_{m''}\,a_{m'}\,\hat{g}_{ntqm''}\,\hat{g}_{ntqm'}^{\ast}}
   \quad,
