@@ -223,6 +223,24 @@ HOGG: Implementation as logsumexp.
 \end{eqnarray}
 where...HOGG
 
+\section{Priors or regularization}
+
+This model is great! But it has the problem that the likelihood
+increases without bound as the $|a_m|$ increase.
+So we will have to add a Poisson-like penalty $G$ of a form
+something like
+\begin{eqnarray}
+  G &=& -\sum_{m=1}^M a_m^2
+  \\
+  \frac{\dd}{\dd a_m} G &=& -2\,a_m
+\end{eqnarray}
+to the log-likelihoood and its gradient.
+
+There are also various other degeneracies, such as rotation and
+flip symmetries.
+These could also be removed by penalizing the likelihood function
+lightly...HOGG?
+
 \section{Tangent space}
 
 A (probably faulty) counting argument suggests that the
