@@ -8,6 +8,70 @@ photons taken in exoposures at unknown orientations.
 """
 import numpy as np
 
+class image_model:
+
+    def __init__(self):
+        initialize_bases()
+        create_angle_sampling()
+        return self
+
+    def initialize_bases(self):
+        self.M = whatevs
+        self.various_things = whatevs
+        self.lnams = whatevs
+        return None
+
+    def create_angle_sampling(self):
+        self.T = 1024 # MAGIC
+        self.costs = np.cos(self.thetas)
+        self.sints = np.sin(self.thetas)
+        return None
+
+    def evaluate_lnbases(self, xtqs):
+        """
+        # input:
+        - xtqs: ndarray of shape [T, Q, 2]
+
+        # output:
+        - lngtqms: evaluations of shape [T, Q, M]
+        """
+        return lngtqms
+
+    def rotate(xqs):
+        """
+        # input:
+        - xqs: ndarray of shape [Q, 2]
+
+        # output:
+        - xtqs: ndarray of shape [self.T, Q, 2]
+        """
+        xtqs = self.costs[:, None, None] * xqs[None, :, :]
+        xtqs[:, :, 0] += self.sints[:, None] * xqs[None, :, 1]
+        xtqs[:, :, 1] -= self.sints[:, None] * xqs[None, :, 0]
+        return xtqs
+
+    def single_image_lnlike(n):
+        """
+        # input:
+        - n: index of the image for which lnL should be computed
+
+        # output:
+        - lnLn, dlnLn_dlnams: lnL and its gradient wrt self.lnams
+        """
+        I = (self.ns == n)
+        Q = np.sum(I)
+        xqs = (self.xs[I]).reshape((Q, 2))
+        xtqs = self.rotate(xqs)
+        assert xtqs.shape == (self.T, Q, 2)
+        lngtqms = self.evaluate_lnbases(self, xtqs)
+        lnLntqs = logsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
+        dlnLntqs_dlnams = whatevs
+        lnLnts = np.sum(lnLntqs, axis=1)
+        dlnLnts_dlnams = np.sum(dlnLntqs_dlnams, axis=1)
+        lnLn = logsumexp(lnLnts)
+        dlnLn_dlnams = whatevs
+        return lnLn, dlnLn_dlnams
+
 def make_truth():
     """
     OMG dumb.
