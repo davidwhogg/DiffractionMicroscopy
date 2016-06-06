@@ -8,6 +8,33 @@ photons taken in exoposures at unknown orientations.
 """
 import numpy as np
 
+def hoggsumexp(qns, dqn_dams, diag=False):
+    """
+    # purpose:
+    - compute L = log(sum(exp(qns, axis=-1)))
+    - and its M-dimensional gradient components dL / da_m
+
+    # input
+    - qns: ndarray of shape [n1, n2, n3, ..., nD, N]
+    - dqn_dams: ndarray of shape [n1, n2, n3, ..., nD, N, M]
+    - diag: if True, then dqn_dams.shape == dqn_dams.shape and [read the source]
+
+    # output
+    - L: ndarray of shape [n1, n2, n3, ..., nD]
+    - dL_dams: ndarray of shape [n1, n2, n3, ..., nD, M]
+    """
+    axis = len(qns.shape) - 1
+    if diag:
+        assert qns.shape == dqn_dams.shape
+    Q = np.max(qns)
+    expqns = np.exp(qns - Q)
+    expL = np.sum(expqns, axis=axis)
+    if diag:
+        numerator = expqns * dqn_dams
+    else:
+        numerator = np.sum(expqns * dqn_dams, axis=axis)
+    return np.log(expL) + Q, numerator / expL
+
 class image_model:
 
     def __init__(self):
@@ -135,10 +162,7 @@ def make_fake_data(truth, N=1024, rate=1.):
     # notes:
     - Images that get zero photons will be dropped, but N images will be returned.
     """
-    ns = []
-    qs = []
-    ys = []
-    xs = []
+    ns, ys, xs = [], [], []
     for n in range(N):
         Q = 0
         while(Q == 0):
@@ -146,19 +170,43 @@ def make_fake_data(truth, N=1024, rate=1.):
         tys, txs = make_fake_image(truth, Q)
         for q in range(Q):
             ns.append(n)
-            qs.append(q)
             ys.append(tys[q])
             xs.append(txs[q])
-    return np.array(ns), np.array(qs), np.array(ys), np.array(xs)
+    return np.array(ns), np.array(ys), np.array(xs)
+
+def test_hoggsumexp():
+    for shape in [(55, ), (3, 5, 9, )]:
+        qns = np.random.normal(size=shape)
+        dns = np.ones_like(qns)
+        L, dL = hoggsumexp(qns, dns, diag=True)
+        delta = 1e-5
+        if len(shape) == 1:
+            qns[7] += delta
+        else:
+            qns[2, 2, 4] += delta
+        L1, foo = hoggsumexp(qns, dns, diag=True)
+        if len(shape) == 1:
+            qns[7] -= 2. * delta
+        else:
+            qns[2, 2, 4] += delta
+        L2, foo = hoggsumexp(qns, dns, diag=True)
+        if len(shape) == 1:
+            print(dL[7], (L1 - L2) / (2. * delta))
+        else:
+            print(dL[2, 2, 4], (L1 - L2) / (2. * delta))
+    return True
 
 if __name__ == "__main__":
     import pylab as plt
     np.random.seed(42)
 
+    test_hoggsumexp()
+    assert False
+
     truth = make_truth()
 
-    ns, qs, ys, xs = make_fake_data(truth)
-    print(ns.shape, qs.shape, ys.shape, xs.shape)
+    ns, ys, xs = make_fake_data(truth)
+    print(ns.shape, ys.shape, xs.shape)
 
     plt.figure()
     plt.clf()
