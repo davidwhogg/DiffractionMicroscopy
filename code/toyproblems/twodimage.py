@@ -50,9 +50,9 @@ class image_model:
         # issues
         - Magic numbers
         """
-        self.sigma = 3. # magic
+        self.sigma = 2.5 # magic
         self.sigma2 = self.sigma ** 2
-        nyhalf, nxhalf = 8, 16 # magic
+        nyhalf, nxhalf = 9, 18 # magic
         yms, xms = np.meshgrid(np.arange(2 * nyhalf + 1), np.arange(2 * nxhalf + 1))
         yms = (yms - nyhalf).flatten() * self.sigma # lots of magic
         xms = (xms - nxhalf).flatten() * self.sigma
@@ -91,7 +91,7 @@ class image_model:
 
         # issues:
         - Magic numbers.
-        - Requires matplotlib.
+        - Requires matplotlib (or the ducktype).
         """
         ys = np.arange(-30.5, 31, 1) # magic
         xs = np.arange(-50.5, 51, 1) # magic
@@ -101,7 +101,7 @@ class image_model:
         xps[:, :, 0] = ys
         xps[:, :, 1] = xs
         image = np.sum(np.exp(self.lnams[None, None, :] + self.evaluate_lnbases(xps)), axis=2) # unsafe
-        ax.imshow(image, interpolation="nearest")
+        ax.imshow(-image.T, interpolation="nearest", origin="lower")
 
     def rotate(self, xqs):
         """
@@ -281,8 +281,9 @@ if __name__ == "__main__":
     ##print(gradLn[5], (Ln2 - Ln) / delta)
 
     # take a few gradient steps
-    h = 0.1 # magic
-    jplot = 1
+    fig = plt.figure()
+    jplot = 1.0
+    h = 1.0 # magic
     for j in range(2 ** 16):
         n = np.random.randint(model.N)
         Ln, gradLn = model.single_image_lnlike(n)
@@ -290,8 +291,7 @@ if __name__ == "__main__":
         model.lnams += h * gradLn    
 
         # plot the output of the s.g.
-        if (j - 1) == jplot:
-            plt.figure()
+        if (j + 1) > jplot:
             plt.clf()
             plt.gray()
             ax = plt.gca()
@@ -299,5 +299,4 @@ if __name__ == "__main__":
             pfn = "./model_{:06d}.png".format(j)
             plt.savefig(pfn)
             print(pfn)
-            jplot *= 2
-
+            jplot *= np.sqrt(2.)
