@@ -8,35 +8,28 @@ photons taken in exoposures at unknown orientations.
 """
 import numpy as np
 
-def hoggsumexp(qns, dqn_dams, diag=False):
+def hoggsumexp(qns, axis=None):
     """
     # purpose:
-    - Computes L = log(sum(exp(qns, axis=-1))).
-    - Also computes its M-dimensional gradient components dL / da_m.
+    - Computes `L = log(sum(exp(qns, axis=-1)))` but stably.
+    - Also computes its N-dimensional gradient components dL / dg_m.
 
     # input
-    - qns: ndarray of shape [n1, n2, n3, ..., nD, N]
-    - dqn_dams: ndarray of shape [n1, n2, n3, ..., nD, N, M]
-    - diag: if True, then dqn_dams.shape == dqn_dams.shape and [read the source]
+    - `qns`: ndarray of shape (n1, n2, n3, ..., nD, N)
 
     # output
-    - L: ndarray of shape [n1, n2, n3, ..., nD]
-    - dL_dams: ndarray of shape [n1, n2, n3, ..., nD, M]
+    - `L`: ndarray of shape (n1, n2, n3, ..., nD)
+    - `dL_dqns`: ndarray same shape as `qns`
 
     # issues
     - Not exhaustively tested.
     """
-    axis = len(qns.shape) - 1
-    if diag:
-        assert qns.shape == dqn_dams.shape
+    if axis is None:
+        axis = len(qns.shape) - 1
     Q = np.max(qns)
     expqns = np.exp(qns - Q)
     expL = np.sum(expqns, axis=axis)
-    if diag:
-        numerator = expqns * dqn_dams
-    else:
-        numerator = np.sum(np.expand_dims(expqns, axis + 1) * dqn_dams, axis=axis)
-    return np.log(expL) + Q, numerator / np.expand_dims(expL, axis)
+    return np.log(expL) + Q, expqns / np.expand_dims(expL, axis)
 
 class image_model:
 
@@ -87,6 +80,10 @@ class image_model:
 
         # output:
         - lnLn, dlnLn_dlnams: lnL and its gradient wrt self.lnams
+
+        # issues:
+        - Not tested.
+        - Too many asserts!
         """
         I = (self.ns == n)
         Q = np.sum(I)
@@ -94,12 +91,23 @@ class image_model:
         xtqs = self.rotate(xqs)
         assert xtqs.shape == (self.T, Q, 2)
         lngtqms = self.evaluate_lnbases(self, xtqs)
-        lnLntqs = logsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
-        dlnLntqs_dlnams = whatevs
+        assert lngtqms.shape == (self.T, Q, self.M)
+        # logsumexp over m index
+        lnLntqs, dlnLtqs_dqs= hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
+        assert lnLntqs.shape == (self.T, Q)
+        assert lnLntqs.shape == (self.T, Q, self.M)
+        dlnLntqs_dlnams = dlnLtqs_dqs * lngtqms
+        assert dlnLntqs_dlnams.shape == (self.T, Q, self.M)
+        # sum over q index
         lnLnts = np.sum(lnLntqs, axis=1)
+        assert lnLnts.shape == (self.T, )
         dlnLnts_dlnams = np.sum(dlnLntqs_dlnams, axis=1)
-        lnLn = logsumexp(lnLnts)
-        dlnLn_dlnams = whatevs
+        assert dlnLnts_dlnams.shape == (self.T, self.M)
+        # logsumexp over t index
+        lnLn, dlnLn_dlnLnts = hoggsumexp(lnLnts, axis=0)
+        assert ddlnLn_dlnLnts.shape == (self.T, )
+        dlnLn_dlnams = np.sum(dlnLn_dlnLnts[:, None] * dlnLnts_dlnams, axis=0)
+        assert dlnLn_dlnams.shape == (self.M, )
         return lnLn, dlnLn_dlnams
 
 def make_truth():
@@ -180,8 +188,7 @@ def make_fake_data(truth, N=1024, rate=1.):
 def test_hoggsumexp():
     for shape in [(7, ), (3, 5, 9)]:
         qns = np.random.normal(size=shape)
-        dns = np.ones_like(qns)
-        L, dL = hoggsumexp(qns, dns, diag=True)
+        L, dL = hoggsumexp(qns)
         if len(shape) == 3:
             assert L.shape == (3, 5)
             assert dL.shape == (3, 5, 9)
@@ -190,30 +197,21 @@ def test_hoggsumexp():
             qns[3] += delta
         else:
             qns[2, 2, 4] += delta
-        L1, foo = hoggsumexp(qns, dns, diag=True)
+        L1, foo = hoggsumexp(qns)
         if len(shape) == 1:
             qns[3] -= 2. * delta
         else:
             qns[2, 2, 4] -= 2. * delta
-        L2, foo = hoggsumexp(qns, dns, diag=True)
+        L2, foo = hoggsumexp(qns)
         if len(shape) == 1:
             print(dL[3], (L1 - L2) / (2. * delta))
         else:
             print(dL[2, 2, 4], (L1 - L2) / (2. * delta))
-
-        if len(shape) == 1:
-            qns[3] += delta # restore
-            dns = np.eye(shape[-1])[:,0:4]
-            L3, dL3 = hoggsumexp(qns, dns)
-            print(L, L3, dL[3], dL3[3])
     return True
 
 if __name__ == "__main__":
     import pylab as plt
     np.random.seed(42)
-
-    test_hoggsumexp()
-    assert False
 
     truth = make_truth()
 
