@@ -33,21 +33,35 @@ def hoggsumexp(qns, axis=None):
 
 class image_model:
 
-    def __init__(self):
-        initialize_bases()
-        create_angle_sampling()
-        return self
+    def __init__(self, ns, xnqs):
+        self.N = int(np.max(ns)) + 1
+        self.ns = ns
+        self.xnqs = xnqs
+        self.initialize_bases()
+        self.create_angle_sampling()
+        print(self.lnams.shape, self.ns.shape, self.xms.shape, self.xnqs.shape)
+        return None
 
     def initialize_bases(self):
-        self.M = whatevs
-        self.various_things = whatevs
-        self.lnams = whatevs
+        """
+        - Make the things you need for a grid of overlapping Gaussians.
+        """
+        self.sigma = 2. # magic
+        self.sigma2 = self.sigma ** 2
+        nyhalf, nxhalf = 7, 14 # magic
+        yms, xms = np.meshgrid(np.arange(2 * nyhalf + 1), np.arange(2 * nxhalf + 1))
+        yms = (yms - nyhalf).flatten() * self.sigma # lots of magic
+        xms = (xms - nxhalf).flatten() * self.sigma
+        self.M = len(yms)
+        self.xms = np.vstack((yms, xms)).T
+        self.lnams = np.zeros_like(yms)
         return None
 
     def create_angle_sampling(self):
         self.T = 1024 # MAGIC
-        self.costs = np.cos(self.thetas)
-        self.sints = np.sin(self.thetas)
+        thetas = 2. * np.pi * np.random.uniform(size=self.T)
+        self.costs = np.cos(thetas)
+        self.sints = np.sin(thetas)
         return None
 
     def evaluate_lnbases(self, xtqs):
@@ -58,9 +72,13 @@ class image_model:
         # output:
         - lngtqms: evaluations of shape [T, Q, M]
         """
-        return lngtqms
+        T, Q, two = xtqs.shape
+        assert T == self.T
+        assert two == 2
+        return -0.5 * np.sum((xtqs[:, :, None, :] - self.xms[None, None, :, :]) ** 2, axis=3) / self.sigma2 \
+            - np.log(2. * np.pi * self.sigma2)
 
-    def rotate(xqs):
+    def rotate(self, xqs):
         """
         # input:
         - xqs: ndarray of shape [Q, 2]
@@ -73,7 +91,7 @@ class image_model:
         xtqs[:, :, 1] -= self.sints[:, None] * xqs[None, :, 0]
         return xtqs
 
-    def single_image_lnlike(n):
+    def single_image_lnlike(self, n):
         """
         # input:
         - n: index of the image for which lnL should be computed
@@ -87,16 +105,16 @@ class image_model:
         """
         I = (self.ns == n)
         Q = np.sum(I)
-        xqs = (self.xs[I]).reshape((Q, 2))
+        xqs = (self.xnqs[I]).reshape((Q, 2))
         xtqs = self.rotate(xqs)
         assert xtqs.shape == (self.T, Q, 2)
-        lngtqms = self.evaluate_lnbases(self, xtqs)
+        lngtqms = self.evaluate_lnbases(xtqs)
         assert lngtqms.shape == (self.T, Q, self.M)
         # logsumexp over m index
-        lnLntqs, dlnLtqs_dqs= hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
+        lnLntqs, dlnLntqs_dqs= hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
         assert lnLntqs.shape == (self.T, Q)
-        assert lnLntqs.shape == (self.T, Q, self.M)
-        dlnLntqs_dlnams = dlnLtqs_dqs * lngtqms
+        assert dlnLntqs_dqs.shape == (self.T, Q, self.M)
+        dlnLntqs_dlnams = dlnLntqs_dqs * lngtqms
         assert dlnLntqs_dlnams.shape == (self.T, Q, self.M)
         # sum over q index
         lnLnts = np.sum(lnLntqs, axis=1)
@@ -105,7 +123,7 @@ class image_model:
         assert dlnLnts_dlnams.shape == (self.T, self.M)
         # logsumexp over t index
         lnLn, dlnLn_dlnLnts = hoggsumexp(lnLnts, axis=0)
-        assert ddlnLn_dlnLnts.shape == (self.T, )
+        assert dlnLn_dlnLnts.shape == (self.T, )
         dlnLn_dlnams = np.sum(dlnLn_dlnLnts[:, None] * dlnLnts_dlnams, axis=0)
         assert dlnLn_dlnams.shape == (self.M, )
         return lnLn, dlnLn_dlnams
@@ -213,13 +231,35 @@ if __name__ == "__main__":
     import pylab as plt
     np.random.seed(42)
 
+    # make fake data
     truth = make_truth()
+    ns, ys, xs = make_fake_data(truth, N=16, rate=16.)
+    xnqs = np.vstack((ys, xs)).T
+    print(ns.shape, ys.shape, xs.shape, xnqs.shape)
 
-    ns, ys, xs = make_fake_data(truth)
-    print(ns.shape, ys.shape, xs.shape)
-
+    # plot fake data
     plt.figure()
     plt.clf()
     plt.plot(xs, ys, 'k.', alpha=0.5)
     plt.axis("equal")
     plt.savefig("./test.png")
+
+    # initialize model
+    model = image_model(ns, xnqs)
+    Ln, gradLn = model.single_image_lnlike(0)
+    print(Ln, gradLn)
+
+    # take a gradient step
+    h = 1. # magic
+    model.lnams += h * gradLn    
+    Ln, gradLn = model.single_image_lnlike(1)
+    print(Ln, gradLn)
+    model.lnams += h * gradLn    
+    Ln, gradLn = model.single_image_lnlike(0)
+    print(Ln, gradLn)
+
+    # check derivative
+    delta = 1.e-5 # magic
+    model.lnams[5] += delta
+    Ln2, gradLn2 = model.single_image_lnlike(0)
+    print(gradLn[5], (Ln2 - Ln) / delta)
