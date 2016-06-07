@@ -5,6 +5,7 @@ Copyright 2016 David W. Hogg (NYU, SCDA).
 This piece of code does nothing related to diffraction.
 It only shows that you can reconstruct an image from small numbers of
 photons taken in exoposures at unknown orientations.
+
 """
 import numpy as np
 
@@ -111,10 +112,8 @@ class image_model:
         lngtqms = self.evaluate_lnbases(xtqs)
         assert lngtqms.shape == (self.T, Q, self.M)
         # logsumexp over m index
-        lnLntqs, dlnLntqs_dqs= hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
+        lnLntqs, dlnLntqs_dlnams = hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
         assert lnLntqs.shape == (self.T, Q)
-        assert dlnLntqs_dqs.shape == (self.T, Q, self.M)
-        dlnLntqs_dlnams = dlnLntqs_dqs * lngtqms
         assert dlnLntqs_dlnams.shape == (self.T, Q, self.M)
         # sum over q index
         lnLnts = np.sum(lnLntqs, axis=1)
@@ -126,7 +125,9 @@ class image_model:
         assert dlnLn_dlnLnts.shape == (self.T, )
         dlnLn_dlnams = np.sum(dlnLn_dlnLnts[:, None] * dlnLnts_dlnams, axis=0)
         assert dlnLn_dlnams.shape == (self.M, )
-        return lnLn, dlnLn_dlnams
+        dpenalty_dlnams = np.exp(self.lnams)
+        penalty = np.sum(dpenalty_dlnams)
+        return lnLn - penalty, dlnLn_dlnams - dpenalty_dlnams
 
 def make_truth():
     """
@@ -249,17 +250,17 @@ if __name__ == "__main__":
     Ln, gradLn = model.single_image_lnlike(0)
     print(Ln, gradLn)
 
-    # take a gradient step
-    h = 1. # magic
-    model.lnams += h * gradLn    
-    Ln, gradLn = model.single_image_lnlike(1)
-    print(Ln, gradLn)
-    model.lnams += h * gradLn    
-    Ln, gradLn = model.single_image_lnlike(0)
-    print(Ln, gradLn)
-
     # check derivative
-    delta = 1.e-5 # magic
-    model.lnams[5] += delta
-    Ln2, gradLn2 = model.single_image_lnlike(0)
-    print(gradLn[5], (Ln2 - Ln) / delta)
+    ##delta = 1.e-5 # magic
+    ##model.lnams[5] += delta
+    ##Ln2, gradLn2 = model.single_image_lnlike(0)
+    ##print(gradLn[5], (Ln2 - Ln) / delta)
+
+    # take a few gradient steps
+    h = 0.1 # magic
+    for j in range(128):
+        n = np.random.randint(model.N)
+        Ln, gradLn = model.single_image_lnlike(n)
+        print("stochastic", j, n, Ln)
+        model.lnams += h * gradLn    
+
