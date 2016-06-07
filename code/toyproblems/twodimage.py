@@ -45,20 +45,27 @@ class image_model:
 
     def initialize_bases(self):
         """
-        - Make the things you need for a grid of overlapping Gaussians.
+        Make the things you need for a grid of overlapping Gaussians.
+        
+        # issues
+        - Magic numbers
         """
-        self.sigma = 2. # magic
+        self.sigma = 3. # magic
         self.sigma2 = self.sigma ** 2
-        nyhalf, nxhalf = 7, 14 # magic
+        nyhalf, nxhalf = 8, 16 # magic
         yms, xms = np.meshgrid(np.arange(2 * nyhalf + 1), np.arange(2 * nxhalf + 1))
         yms = (yms - nyhalf).flatten() * self.sigma # lots of magic
         xms = (xms - nxhalf).flatten() * self.sigma
         self.M = len(yms)
         self.xms = np.vstack((yms, xms)).T
-        self.lnams = np.zeros_like(yms)
+        self.lnams = np.random.normal(size=yms.shape)
         return None
 
     def create_angle_sampling(self):
+        """
+        # issues
+        - Magic numbers.
+        """
         self.T = 1024 # MAGIC
         thetas = 2. * np.pi * np.random.uniform(size=self.T)
         self.costs = np.cos(thetas)
@@ -74,10 +81,27 @@ class image_model:
         - lngtqms: evaluations of shape [T, Q, M]
         """
         T, Q, two = xtqs.shape
-        assert T == self.T
         assert two == 2
         return -0.5 * np.sum((xtqs[:, :, None, :] - self.xms[None, None, :, :]) ** 2, axis=3) / self.sigma2 \
             - np.log(2. * np.pi * self.sigma2)
+
+    def plot(self, ax):
+        """
+        Put a two-d image onto a matplotlib plot.
+
+        # issues:
+        - Magic numbers.
+        - Requires matplotlib.
+        """
+        ys = np.arange(-30.5, 31, 1) # magic
+        xs = np.arange(-50.5, 51, 1) # magic
+        ys, xs = np.meshgrid(ys, xs)
+        ny, nx = ys.shape
+        xps = np.zeros((ny, nx, 2))
+        xps[:, :, 0] = ys
+        xps[:, :, 1] = xs
+        image = np.sum(np.exp(self.lnams[None, None, :] + self.evaluate_lnbases(xps)), axis=2) # unsafe
+        ax.imshow(image, interpolation="nearest")
 
     def rotate(self, xqs):
         """
@@ -234,7 +258,7 @@ if __name__ == "__main__":
 
     # make fake data
     truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=16, rate=16.)
+    ns, ys, xs = make_fake_data(truth, N=1024, rate=16.)
     xnqs = np.vstack((ys, xs)).T
     print(ns.shape, ys.shape, xs.shape, xnqs.shape)
 
@@ -258,9 +282,22 @@ if __name__ == "__main__":
 
     # take a few gradient steps
     h = 0.1 # magic
-    for j in range(128):
+    jplot = 1
+    for j in range(2 ** 16):
         n = np.random.randint(model.N)
         Ln, gradLn = model.single_image_lnlike(n)
         print("stochastic", j, n, Ln)
         model.lnams += h * gradLn    
+
+        # plot the output of the s.g.
+        if (j - 1) == jplot:
+            plt.figure()
+            plt.clf()
+            plt.gray()
+            ax = plt.gca()
+            model.plot(ax)
+            pfn = "./model_{:06d}.png".format(j)
+            plt.savefig(pfn)
+            print(pfn)
+            jplot *= 2
 
