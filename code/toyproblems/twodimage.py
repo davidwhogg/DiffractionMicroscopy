@@ -40,7 +40,7 @@ class image_model:
         self.xnqs = xnqs
         self.initialize_bases()
         self.create_angle_sampling()
-        print(self.lnams.shape, self.ns.shape, self.xms.shape, self.xnqs.shape)
+        print("image_model:", self.lnams.shape, self.ns.shape, self.xms.shape, self.xnqs.shape)
         return None
 
     def initialize_bases(self):
@@ -101,7 +101,8 @@ class image_model:
         xps[:, :, 0] = ys
         xps[:, :, 1] = xs
         image = np.sum(np.exp(self.lnams[None, None, :] + self.evaluate_lnbases(xps)), axis=2) # unsafe
-        ax.imshow(-image.T, interpolation="nearest", origin="lower")
+        vmin = -0.5 * max(image)
+        ax.imshow(-image.T, interpolation="nearest", origin="lower", vmin=vmin, vmax=0.)
 
     def rotate(self, xqs):
         """
@@ -172,7 +173,7 @@ def make_truth():
     w, h, pixels, metadata = png.Reader(filename=datafn).read_flat()
     pixels = (np.array(pixels).reshape((h,w,4)))[::-1,:,0]
     pixels = (np.max(pixels) - pixels) / np.max(pixels)
-    print(w, h, pixels.shape, metadata)
+    print("truth:", w, h, pixels.shape, metadata)
     return pixels
 
 def get_one_photon(image):
@@ -247,9 +248,9 @@ def test_hoggsumexp():
             qns[2, 2, 4] -= 2. * delta
         L2, foo = hoggsumexp(qns)
         if len(shape) == 1:
-            print(dL[3], (L1 - L2) / (2. * delta))
+            print("test_hoggsumexp():", dL[3], (L1 - L2) / (2. * delta))
         else:
-            print(dL[2, 2, 4], (L1 - L2) / (2. * delta))
+            print("test_hoggsumexp():", dL[2, 2, 4], (L1 - L2) / (2. * delta))
     return True
 
 if __name__ == "__main__":
@@ -258,23 +259,27 @@ if __name__ == "__main__":
 
     # make fake data
     truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=1024, rate=16.)
+    ns, ys, xs = make_fake_data(truth, N=32768, rate=16.)
     xnqs = np.vstack((ys, xs)).T
-    print(ns.shape, ys.shape, xs.shape, xnqs.shape)
+    print("fake data:", ns.shape, xnqs.shape)
 
     # plot fake data
     plt.figure()
-    plt.clf()
-    plt.plot(xs, ys, 'k.', alpha=0.5)
-    plt.axis("equal")
-    plt.savefig("./test.png")
+    for n in range(16):
+        plt.clf()
+        I = (ns == n)
+        plt.plot(xs[I], ys[I], 'k.')
+        plt.axis("equal")
+        plt.ylim(-50., 50.)
+        pfn = "./datum_{:06d}.png".format(n)
+        plt.savefig(pfn)
+        print(pfn)
 
     # initialize model
     model = image_model(ns, xnqs)
-    Ln, gradLn = model.single_image_lnlike(0)
-    print(Ln, gradLn)
 
     # check derivative
+    ##Ln, gradLn = model.single_image_lnlike(0)
     ##delta = 1.e-5 # magic
     ##model.lnams[5] += delta
     ##Ln2, gradLn2 = model.single_image_lnlike(0)
@@ -283,11 +288,11 @@ if __name__ == "__main__":
     # take a few gradient steps
     fig = plt.figure()
     jplot = 1.0
-    h = 1.0 # magic
     for j in range(2 ** 16):
+        h = 256. / (256. + float(j)) # magic
         n = np.random.randint(model.N)
         Ln, gradLn = model.single_image_lnlike(n)
-        print("stochastic", j, n, Ln)
+        print("stochastic", j, h, n, Ln)
         model.lnams += h * gradLn    
 
         # plot the output of the s.g.
