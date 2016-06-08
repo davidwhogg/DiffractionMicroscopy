@@ -8,6 +8,7 @@ photons taken in exoposures at unknown orientations.
 
 """
 import numpy as np
+import pickle
 
 def hoggsumexp(qns, axis=None):
     """
@@ -50,9 +51,9 @@ class image_model:
         # issues
         - Magic numbers
         """
-        self.sigma = 2.5 # magic
+        self.sigma = 2.0 # magic
         self.sigma2 = self.sigma ** 2
-        nyhalf, nxhalf = 9, 18 # magic
+        nyhalf, nxhalf = 12, 24 # magic
         yms, xms = np.meshgrid(np.arange(2 * nyhalf + 1), np.arange(2 * nxhalf + 1))
         yms = (yms - nyhalf).flatten() * self.sigma # lots of magic
         xms = (xms - nxhalf).flatten() * self.sigma
@@ -85,6 +86,13 @@ class image_model:
         return -0.5 * np.sum((xtqs[:, :, None, :] - self.xms[None, None, :, :]) ** 2, axis=3) / self.sigma2 \
             - np.log(2. * np.pi * self.sigma2)
 
+    def pickle_to_file(self, fn):
+        fd = open(fn, "wb")
+        pickle.dump(self, fd)
+        fd.close()
+        print(fn)
+        return None
+
     def plot(self, ax):
         """
         Put a two-d image onto a matplotlib plot.
@@ -101,8 +109,9 @@ class image_model:
         xps[:, :, 0] = ys
         xps[:, :, 1] = xs
         image = np.sum(np.exp(self.lnams[None, None, :] + self.evaluate_lnbases(xps)), axis=2) # unsafe
-        vmin = -0.5 * max(image)
+        vmin = -0.75 * np.max(image)
         ax.imshow(-image.T, interpolation="nearest", origin="lower", vmin=vmin, vmax=0.)
+        return None
 
     def rotate(self, xqs):
         """
@@ -163,12 +172,12 @@ def make_truth():
     import png
     plt.figure(figsize=(0.5,0.3))
     plt.clf()
-    plt.text(0.5, 0.5, r"Vera",
+    plt.text(0.5, 0.5, r"DWH",
              ha="center", va="center",
              clip_on=False,
              transform=plt.gcf().transFigure);
     plt.gca().set_axis_off()
-    datafn = "./vera.png"
+    datafn = "./truth.png"
     plt.savefig(datafn, dpi=200)
     w, h, pixels, metadata = png.Reader(filename=datafn).read_flat()
     pixels = (np.array(pixels).reshape((h,w,4)))[::-1,:,0]
@@ -259,7 +268,7 @@ if __name__ == "__main__":
 
     # make fake data
     truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=32768, rate=16.)
+    ns, ys, xs = make_fake_data(truth, N=2**16, rate=4.)
     xnqs = np.vstack((ys, xs)).T
     print("fake data:", ns.shape, xnqs.shape)
 
@@ -269,8 +278,10 @@ if __name__ == "__main__":
         plt.clf()
         I = (ns == n)
         plt.plot(xs[I], ys[I], 'k.')
-        plt.axis("equal")
+        plt.axis("square")
+        plt.xlim(-50., 50.)
         plt.ylim(-50., 50.)
+        plt.title("image $n={}$ ($Q={}$)".format(n, np.sum(I)))
         pfn = "./datum_{:06d}.png".format(n)
         plt.savefig(pfn)
         print(pfn)
@@ -287,16 +298,21 @@ if __name__ == "__main__":
 
     # take a few gradient steps
     fig = plt.figure()
-    jplot = 1.0
+    sumh = 0.
+    hplot = 0.
     for j in range(2 ** 16):
-        h = 256. / (256. + float(j)) # magic
+        h = 4096. / (4096. + float(j)) # magic
+        sumh += h
         n = np.random.randint(model.N)
         Ln, gradLn = model.single_image_lnlike(n)
         print("stochastic", j, h, n, Ln)
         model.lnams += h * gradLn    
 
         # plot the output of the s.g.
-        if (j + 1) > jplot:
+        if sumh > hplot:
+            hplot += 10.
+            pfn = "./model_{:06d}.pkl".format(j)
+            model.pickle_to_file(pfn)
             plt.clf()
             plt.gray()
             ax = plt.gca()
@@ -304,4 +320,3 @@ if __name__ == "__main__":
             pfn = "./model_{:06d}.png".format(j)
             plt.savefig(pfn)
             print(pfn)
-            jplot *= np.sqrt(2.)
