@@ -274,7 +274,7 @@ if __name__ == "__main__":
 
     # plot fake data
     plt.figure()
-    for n in range(16):
+    for n in range(256):
         plt.clf()
         I = (ns == n)
         plt.plot(xs[I], ys[I], 'k.')
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     sumh = 0.
     hplot = 0.
     for j in range(2 ** 16):
-        h = 4096. / (4096. + float(j)) # magic
+        h = 4096. / (2048. + float(j)) # magic
         sumh += h
         n = np.random.randint(model.N)
         Ln, gradLn = model.single_image_lnlike(n)
