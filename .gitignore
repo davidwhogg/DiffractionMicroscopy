@@ -4,3 +4,5 @@
 *.png
 *.pyc
 __pycache__
+*.npy
+.idea/
