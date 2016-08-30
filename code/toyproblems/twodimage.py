@@ -53,7 +53,8 @@ class ImageModel:
         Make the things you need for a grid of overlapping Gaussians.
         
         # issues
-        - Magic numbers
+        - Magic numbers.
+        - The three-d model is actually two-d, which is cheating!!
         """
         self.sigma = 2.0  # magic
         self.sigma2 = self.sigma ** 2
@@ -62,42 +63,53 @@ class ImageModel:
                                np.arange(2 * nxhalf + 1))
         yms = (yms - nyhalf).flatten() * self.sigma  # lots of magic
         xms = (xms - nxhalf).flatten() * self.sigma
+        zms = np.zeros_like(yms) # this is cheating!!
         self.M = len(yms)
-        self.xms = np.vstack((yms, xms)).T
+        self.xms = np.vstack((yms, xms, zms)).T
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self, T=1024):  # MAGIC
+    def create_angle_sampling(self, T=2**12):  # MAGIC
         """
         # issues
-        - Magic numbers.
+        - Ought to re-draw yhats that have large dot products with xhats...
         """
         self.T = T
+        self.rotations = np.zeros((T, 2, 3))
         xhats = np.random.normal(size=3*T).reshape((T, 3))
         xhats /= np.sqrt(np.sum(xhats**2, axis=1))[:, None]
         yhats = np.random.normal(size=3*T).reshape((T, 3))
         yhats -= np.sum(xhats*yhats, axis=1)[:,None] * xhats
         yhats /= np.sqrt(np.sum(yhats**2, axis=1))[:, None]
-
-        self.xhats = xhats
-        self.yhats = yhats
-
-        # thetas = 2. * np.pi * np.random.uniform(size=self.T)
-        # self.costs = np.cos(thetas)
-        # self.sints = np.sin(thetas)
+        self.rotations[:, 0, :] = xhats
+        self.rotations[:, 1, :] = yhats
         return None
 
-    def evaluate_lnbases(self, xtqs):
+    def evaluate_rotated_lnbases(self, xqs):
         """
         # input:
-        - xtqs: ndarray of shape [T, Q, 2]
+        - xqs: ndarray of shape [Q, 2]
 
         # output:
         - lngtqms: evaluations of shape [T, Q, M]
         """
-        T, Q, two = xtqs.shape
+        Q, two = xqs.shape
         assert two == 2
-        return -0.5 * np.sum((xtqs[:, :, None, :] - self.xms[None, None, :, :]) ** 2, axis=3) / self.sigma2 \
+        
+        xtms = np.sum(self.rotations[:, None, :, :] * self.xms[None, :, None, :], axis=3)
+        print(xqs.shape, xtms.shape)
+        return -0.5 * np.sum((xqs[None, :, None, :] - xtms[:, None, :, :]) ** 2, axis=3) / self.sigma2 \
+            - np.log(2. * np.pi * self.sigma2)
+
+    def evaluate_lnbases(self, xfqs):
+        """
+        # input:
+        - xfqs: ndarray of shape [foo, Q, 2]
+
+        # output:
+        - lngfqms: evaluations of shape [foo, Q, M]
+        """
+        return -0.5 * np.sum((xfqs[:, :, None, :] - self.xms[None, None, :, :2]) ** 2, axis=3) / self.sigma2 \
             - np.log(2. * np.pi * self.sigma2)
 
     def pickle_to_file(self, fn):
@@ -127,28 +139,6 @@ class ImageModel:
         ax.imshow(-image.T, interpolation="nearest", origin="lower", vmin=vmin, vmax=0.)
         return None
 
-    def rotate(self, xqs):
-        """
-        # input:
-        - xqs: ndarray of shape [Q, 2]
-
-        # output:
-        - xtqs: ndarray of shape [self.T, Q, 2]
-        """
-
-        # IN: Q, 3 ; xhats/yhats T, 3 ; OUT: T, Q, 2
-
-        # FIXME: Doesn't work yet!!!
-
-        rot_mats = np.rollaxis(np.dstack([self.xhats, self.yhats]), 2, 1)
-
-        return np.rollaxis(np.dot(rot_mats, xqs.T), 2, 1)
-
-        # xtqs = self.costs[:, None, None] * xqs[None, :, :]
-        # xtqs[:, :, 0] += self.sints[:, None] * xqs[None, :, 1]
-        # xtqs[:, :, 1] -= self.sints[:, None] * xqs[None, :, 0]
-        # return xtqs
-
     def single_image_lnlike(self, n):
         """
         # input:
@@ -160,32 +150,30 @@ class ImageModel:
         # issues:
         - Not tested.
         - Too many asserts!
+        - Is the penalty and its derivative correct? Hogg is suspicious.
         """
         I = (self.ns == n)
         Q = np.sum(I)
         xqs = (self.xnqs[I]).reshape((Q, 2))
-        xtqs = self.rotate(xqs)
-        assert xtqs.shape == (self.T, Q, 2)
-        lngtqms = self.evaluate_lnbases(xtqs)
+        lngtqms = self.evaluate_rotated_lnbases(xqs)
         assert lngtqms.shape == (self.T, Q, self.M)
-        # logsumexp over m index
+        # logsumexp over m index (ie, summing the mixture of Gaussians)
         lnLntqs, dlnLntqs_dlnams = hoggsumexp(self.lnams[None, None, :] + lngtqms, axis=2)
         assert lnLntqs.shape == (self.T, Q)
         assert dlnLntqs_dlnams.shape == (self.T, Q, self.M)
-        # sum over q index
+        # sum over q index (ie, product together all the photons in image n)
         lnLnts = np.sum(lnLntqs, axis=1)
         assert lnLnts.shape == (self.T, )
         dlnLnts_dlnams = np.sum(dlnLntqs_dlnams, axis=1)
         assert dlnLnts_dlnams.shape == (self.T, self.M)
-        # logsumexp over t index
+        # logsumexp over t index (ie, marginalize out the angles)
         lnLn, dlnLn_dlnLnts = hoggsumexp(lnLnts, axis=0)
         assert dlnLn_dlnLnts.shape == (self.T, )
         dlnLn_dlnams = np.sum(dlnLn_dlnLnts[:, None] * dlnLnts_dlnams, axis=0)
         assert dlnLn_dlnams.shape == (self.M, )
         dpenalty_dlnams = np.exp(self.lnams)
-        penalty = np.sum(dpenalty_dlnams)
+        penalty = np.sum(dpenalty_dlnams) # is this correct?
         return lnLn - penalty, dlnLn_dlnams - dpenalty_dlnams
-
 
 def test_hoggsumexp():
     for shape in [(7, ), (3, 5, 9)]:
@@ -214,8 +202,7 @@ def test_hoggsumexp():
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ns, xnqs, rnd_state = np.load('./photons.npy')
-    np.random.set_state(rnd_state)
+    ns, xnqs = np.load('./photons.npy')
 
     # initialize model
     model = ImageModel(ns, xnqs)
@@ -241,7 +228,7 @@ if __name__ == "__main__":
 
         # plot the output of the s.g.
         if sumh > hplot:
-            hplot += 10.
+            hplot += 20.
             pfn = "./model_{:06d}.pkl".format(j)
             model.pickle_to_file(pfn)
             plt.clf()
