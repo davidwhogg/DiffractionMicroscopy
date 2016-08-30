@@ -5,26 +5,26 @@ from scipy import ndimage
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def get_one_photon(image):
+def get_one_photon(image, cdf):
     """
     stupidly uses rejection sampling!
     lots of annoying details.
     """
-    d, h, w = image.shape
-    maxi = np.max(image)
-    count = 0
-    while count == 0:
-        zz = np.random.randint(d)
-        yy = np.random.randint(h)
-        xx = np.random.randint(w)
-        if image[zz, yy, xx] > maxi * np.random.uniform():
-            count = 1
-    return (zz - d / 2 + np.random.uniform(),
-            yy - h / 2 + np.random.uniform(),
-            xx - w / 2 + np.random.uniform())
+    draw = np.random.uniform() * cdf[-1]
+    draw_index = np.argmin(np.abs(cdf - draw))
+    # full_index = np.arange(image.size, dtype=int).reshape(image.shape)[draw_index]
+    threed_index = np.unravel_index(draw_index, image.shape)
+    return threed_index - np.array(image.shape) / 2 + np.random.uniform(size=3)
+
+    # maxi = np.max(image)
+    # while True:
+    #     zyx = np.unravel_index(np.random.randint(image.size), image.shape)
+    #     if image[zyx] > maxi * np.random.uniform():
+    #         break
+    # return zyx - np.array(image.shape) / 2 + np.random.uniform(size=3)
 
 
-def make_fake_image(truth, Q):
+def make_fake_image(truth, cdf, Q):
     """
     # inputs:
     - truth: pixelized image of density
@@ -44,19 +44,20 @@ def make_fake_image(truth, Q):
 
     # theta = 2. * np.pi * np.random.uniform()
     # ct, st = np.cos(theta), np.sin(theta)
-    ys = np.zeros(Q)
-    xs = np.zeros(Q)
-    for q in range(Q):
-        zyx = get_one_photon(truth)
 
-        xyq = np.dot(projection_matrix, zyx)
+    zyxs = np.array([get_one_photon(truth, cdf) for q in range(Q)]).T
+    yxs = np.dot(projection_matrix, zyxs).T
+    # for q in range(Q):
+    #     zyx = get_one_photon(truth)
+    #
+    #     xyq = np.dot(projection_matrix, zyx)
+    #
+    #     xs[q] = xyq[0]
+    #     ys[q] = xyq[1]
+    return yxs[:,0], yxs[:,1]
 
-        xs[q] = xyq[0]
-        ys[q] = xyq[1]
-    return ys, xs
 
-
-def make_fake_data(truth, N=1024, rate=1.):
+def make_fake_data(truth, cdf, N=1024, rate=1.):
     """
     # inputs:
     - truth: pixelized image of density
@@ -67,17 +68,25 @@ def make_fake_data(truth, N=1024, rate=1.):
     - Images that get zero photons will be dropped, but N images will be
       returned.
     """
-    ns, ys, xs = [], [], []
-    for n in range(N):
-        Q = 0
-        while Q == 0:
-            Q = np.random.poisson(rate)
-        tys, txs = make_fake_image(truth, Q)
+    Qs = np.zeros(N, dtype=int)
+    while True:
+        Qs[Qs == 0] = np.random.poisson(rate, size=np.sum(Qs == 0))
+        if np.all(Qs > 0):
+            break
+
+    nyxs = np.zeros(shape=(np.sum(Qs), 3))
+    row = 0
+    for n, Q in enumerate(Qs):
+        tys, txs = make_fake_image(truth, cdf, Q)
         for q in range(Q):
-            ns.append(n)
-            ys.append(tys[q])
-            xs.append(txs[q])
-    return np.array(ns), np.array(ys), np.array(xs)
+            nyxs[row, :] = (n , tys[q], txs[q])
+            row += 1
+        # Print progress
+        next_pct = 100 * (n + 1) // N
+        curr_pct = 100 * n // N
+        if next_pct - curr_pct > 0:
+            print('{:d}%'.format(next_pct))
+    return nyxs[:,0], nyxs[:,1], nyxs[:,2]
 
 
 def make_truth():
@@ -139,7 +148,8 @@ if __name__ == '__main__':
 
     # make fake data
     truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=2 ** 16, rate=4.)
+    cdf = np.cumsum(truth)
+    ns, ys, xs = make_fake_data(truth, cdf, N=2**16, rate=4.)
     xnqs = np.vstack((ys, xs)).T
 
     print("fake data:", ns.shape, xnqs.shape)
