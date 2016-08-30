@@ -6,6 +6,9 @@ This piece of code does nothing related to diffraction.
 It only shows that you can reconstruct an image from small numbers of
 photons taken in exoposures at unknown orientations.
 
+# issues
+- Should we apply the rotation projections to the sampling pixel
+  points or to the Gaussian basis functions? Probably the latter.
 """
 import numpy as np
 import pickle
@@ -62,12 +65,12 @@ class image_model:
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self):
+    def create_angle_sampling(self, T=1024): # MAGIC
         """
         # issues
         - Magic numbers.
         """
-        self.T = 1024 # MAGIC
+        self.T = T
         thetas = 2. * np.pi * np.random.uniform(size=self.T)
         self.costs = np.cos(thetas)
         self.sints = np.sin(thetas)
@@ -172,7 +175,7 @@ def make_truth():
     import png
     plt.figure(figsize=(0.5,0.3))
     plt.clf()
-    plt.text(0.5, 0.5, r"DWH",
+    plt.text(0.5, 0.5, r"Dalya",
              ha="center", va="center",
              clip_on=False,
              transform=plt.gcf().transFigure);
@@ -205,6 +208,9 @@ def make_fake_image(truth, Q):
     # inputs:
     - truth: pixelized image of density
     - Q: number of photons to make
+
+    # issues:
+    - duplicates the projection operation in the image model class above.
     """
     theta = 2. * np.pi * np.random.uniform()
     ct, st = np.cos(theta), np.sin(theta)
