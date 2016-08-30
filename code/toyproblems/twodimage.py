@@ -73,9 +73,18 @@ class ImageModel:
         - Magic numbers.
         """
         self.T = T
-        thetas = 2. * np.pi * np.random.uniform(size=self.T)
-        self.costs = np.cos(thetas)
-        self.sints = np.sin(thetas)
+        xhats = np.random.normal(size=3*T).reshape((T, 3))
+        xhats /= np.sqrt(np.sum(xhats**2, axis=1))[:, None]
+        yhats = np.random.normal(size=3*T).reshape((T, 3))
+        yhats -= np.sum(xhats*yhats, axis=1)[:,None] * xhats
+        yhats /= np.sqrt(np.sum(yhats**2, axis=1))[:, None]
+
+        self.xhats = xhats
+        self.yhats = yhats
+
+        # thetas = 2. * np.pi * np.random.uniform(size=self.T)
+        # self.costs = np.cos(thetas)
+        # self.sints = np.sin(thetas)
         return None
 
     def evaluate_lnbases(self, xtqs):
@@ -126,10 +135,19 @@ class ImageModel:
         # output:
         - xtqs: ndarray of shape [self.T, Q, 2]
         """
-        xtqs = self.costs[:, None, None] * xqs[None, :, :]
-        xtqs[:, :, 0] += self.sints[:, None] * xqs[None, :, 1]
-        xtqs[:, :, 1] -= self.sints[:, None] * xqs[None, :, 0]
-        return xtqs
+
+        # IN: Q, 3 ; xhats/yhats T, 3 ; OUT: T, Q, 2
+
+        # FIXME: Doesn't work yet!!!
+
+        rot_mats = np.rollaxis(np.dstack([self.xhats, self.yhats]), 2, 1)
+
+        return np.rollaxis(np.dot(rot_mats, xqs.T), 2, 1)
+
+        # xtqs = self.costs[:, None, None] * xqs[None, :, :]
+        # xtqs[:, :, 0] += self.sints[:, None] * xqs[None, :, 1]
+        # xtqs[:, :, 1] -= self.sints[:, None] * xqs[None, :, 0]
+        # return xtqs
 
     def single_image_lnlike(self, n):
         """
