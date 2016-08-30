@@ -187,4 +187,4 @@ if __name__ == '__main__':
         print(pfn)
 
     # Pickle photon location info and random number generator state
-    np.save('./photons.npy', (ns, xnqs))
+    np.save('./photons.npy', np.column_stack([ns, xnqs]))
