@@ -5,34 +5,43 @@ from scipy import ndimage
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def get_one_photon(image, cdf):
+def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     """
-    stupidly uses rejection sampling!
-    lots of annoying details.
+    Uses an inverse CDF lookup to find positions for uniform draws
+
+    :param image: The 3d voxel representation of the truth
+    :param cdf: CDF representation of the image. CDF should only be computed for
+        non-zero pixels
+    :param cdf_indexes: 1d indexes from image of the pixels represented in cdf
+    :param nphot: Number of photons to draw
+
+    :return: 3D positions of the drawn photons, about the image center
+
+    ISSUES: make sure the cdf picker is statistically correct
     """
-    draw = np.random.uniform() * cdf[-1]
-    draw_index = np.argmin(np.abs(cdf - draw))
-    # full_index = np.arange(image.size, dtype=int).reshape(image.shape)[draw_index]
-    threed_index = np.unravel_index(draw_index, image.shape)
-    return threed_index - np.array(image.shape) / 2 + np.random.uniform(size=3)
+    draws = np.random.uniform(size=nphot) * cdf[-1]
 
-    # maxi = np.max(image)
-    # while True:
-    #     zyx = np.unravel_index(np.random.randint(image.size), image.shape)
-    #     if image[zyx] > maxi * np.random.uniform():
-    #         break
-    # return zyx - np.array(image.shape) / 2 + np.random.uniform(size=3)
+    insert_locations = np.searchsorted(cdf, draws)
+    argmin_location = np.argmin(np.abs(cdf - draws[0]))
+    # assert insert_locations[0] == argmin_location
+    insert_locations = cdf_indexes[insert_locations]
+    indexes_3d = np.unravel_index(insert_locations, image.shape)
+    indexes_3d = np.column_stack(indexes_3d)
+    jitter = np.random.uniform(size=indexes_3d.size).reshape(indexes_3d.shape)
+    return indexes_3d + jitter - np.array(image.shape) / 2
 
 
-def make_fake_image(truth, cdf, Q):
+def project_by_random_matrix(photon_zyxs):
     """
-    # inputs:
-    - truth: pixelized image of density
-    - Q: number of photons to make
+    Generate a randomized 3D-to-2D projection matrix, and project given photon
+    positions using it.
 
-    # issues:
-    - duplicates the projection operation in the image model class above.
+    :param photon_zyxs: Photon positions in 3D, zyx order
+
+    :return: Projected photon positions in 2D, yx order
     """
+    # TODO: Two randomly drawn vectors *might* almost dot to 1. Better to just
+    # select one axis and then a uniform angle?
     rand_tan1 = np.random.normal(size=3)
     rand_tan1 = rand_tan1 / np.sqrt(np.dot(rand_tan1, rand_tan1))
     rand_tan2 = np.random.normal(size=3)
@@ -42,22 +51,12 @@ def make_fake_image(truth, cdf, Q):
 
     projection_matrix = np.vstack((rand_tan1, rand_tan2))
 
-    # theta = 2. * np.pi * np.random.uniform()
-    # ct, st = np.cos(theta), np.sin(theta)
+    projected_yxs = np.dot(projection_matrix, photon_zyxs.T).T
 
-    zyxs = np.array([get_one_photon(truth, cdf) for q in range(Q)]).T
-    yxs = np.dot(projection_matrix, zyxs).T
-    # for q in range(Q):
-    #     zyx = get_one_photon(truth)
-    #
-    #     xyq = np.dot(projection_matrix, zyx)
-    #
-    #     xs[q] = xyq[0]
-    #     ys[q] = xyq[1]
-    return yxs[:,0], yxs[:,1]
+    return projected_yxs
 
 
-def make_fake_data(truth, cdf, N=1024, rate=1.):
+def make_fake_data(truth, N=1024, rate=1.):
     """
     # inputs:
     - truth: pixelized image of density
@@ -75,12 +74,25 @@ def make_fake_data(truth, cdf, N=1024, rate=1.):
             break
 
     nyxs = np.zeros(shape=(np.sum(Qs), 3))
+
+    # Only calculate image CDF for pixels with non-zero values.
+    # Need to preserve their indexes also.
+    cdf_mask = truth > 0
+    cdf = np.cumsum(truth[cdf_mask])
+    cdf_indexes = np.arange(truth.size, dtype=int)
+    cdf_indexes = cdf_indexes.reshape((truth.shape))
+    cdf_indexes = cdf_indexes[cdf_mask]
+
+    photon_zyxs = get_photon_positions(truth, cdf, cdf_indexes,
+                                       nphot=np.sum(Qs))
+
     row = 0
     for n, Q in enumerate(Qs):
-        tys, txs = make_fake_image(truth, cdf, Q)
-        for q in range(Q):
-            nyxs[row, :] = (n , tys[q], txs[q])
-            row += 1
+        photon_zyxs_img = photon_zyxs[row:row+Q, :]
+        photon_yxs = project_by_random_matrix(photon_zyxs_img)
+        nyxs[row:row+Q, :] = np.column_stack([np.repeat(n, Q), photon_yxs])
+        row += Q
+
         # Print progress
         next_pct = 100 * (n + 1) // N
         curr_pct = 100 * n // N
@@ -109,11 +121,11 @@ def make_truth():
 
     # Now embed in 3d array and rotate in some interesting way
     voxels = np.zeros(pixels.shape+(0.5*200,))
-    voxels[:,:,40] = pixels
-    rot_ang_axis = np.array((2,1,0.5))
+    voxels[:, :, 40] = pixels
+    rot_ang_axis = np.array((2, 1, 0.5))  # Something "interesting"
     # rot_ang_axis = np.array((0, 1.4, 0))
     aff_matrix = angle_axis_to_matrix(rot_ang_axis)
-    center = np.array(voxels.shape)/2  # whatever
+    center = np.array(voxels.shape)/2  # whatever close enough
     # affine_transform offset parameter is dumb
     offset = -(center - center.dot(aff_matrix)).dot(np.linalg.inv(aff_matrix))
     voxels = ndimage.affine_transform(voxels, aff_matrix, offset=offset)
@@ -135,11 +147,18 @@ def make_truth():
 def angle_axis_to_matrix(angle_axis):
     ang = np.sqrt(np.dot(angle_axis, angle_axis))
     axis = angle_axis / ang
-    cross_matrix = np.array(((0, -axis[2], axis[1]),
-                             (axis[2], 0, -axis[0]),
-                             (-axis[1], axis[0], 0)))
-    return np.cos(ang) * np.eye(3) + np.sin(ang) * cross_matrix + \
-           (1 - np.cos(ang)) * np.outer(axis, axis)
+    s_ang = np.sin(ang)
+    c_ang = np.cos(ang)
+
+    out_matrix = c_ang * np.eye(3)
+
+    out_matrix += s_ang * np.array(((0, -axis[2], axis[1]),
+                                    (axis[2], 0, -axis[0]),
+                                    (-axis[1], axis[0], 0)))
+
+    out_matrix += (1 - c_ang) * np.outer(axis, axis)
+
+    return out_matrix
 
 
 if __name__ == '__main__':
@@ -148,15 +167,14 @@ if __name__ == '__main__':
 
     # make fake data
     truth = make_truth()
-    cdf = np.cumsum(truth)
-    ns, ys, xs = make_fake_data(truth, cdf, N=2**16, rate=4.)
+    ns, ys, xs = make_fake_data(truth, N=2**10, rate=2**8)
     xnqs = np.vstack((ys, xs)).T
 
     print("fake data:", ns.shape, xnqs.shape)
 
-    # plot fake data
+    # plot first 20 fake data
     plt.figure()
-    for n in range(256):
+    for n in range(20):
         plt.clf()
         I = (ns == n)
         plt.plot(xs[I], ys[I], 'k.')
@@ -169,4 +187,4 @@ if __name__ == '__main__':
         print(pfn)
 
     # Pickle photon location info and random number generator state
-    np.save('./photons.npy', (ns, xnqs, np.random.get_state()))
+    np.save('./photons.npy', (ns, xnqs))
