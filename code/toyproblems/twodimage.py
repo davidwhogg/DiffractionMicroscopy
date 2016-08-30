@@ -69,7 +69,7 @@ class ImageModel:
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self, T=):  # MAGIC
+    def create_angle_sampling(self, T=2**12):  # MAGIC
         """
         # issues
         - Ought to re-draw yhats that have large dot products with xhats...
