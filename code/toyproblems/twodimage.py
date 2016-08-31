@@ -69,7 +69,7 @@ class ImageModel:
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self, T=2**12):  # MAGIC
+    def create_angle_sampling(self, T=1024):  # MAGIC 1024
         """
         # issues
         - Ought to re-draw yhats that have large dot products with xhats...
@@ -202,7 +202,9 @@ def test_hoggsumexp():
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ns, xnqs = np.load('./photons.npy')
+    photons = np.load('./photons.npy')
+    ns = photons[:, 0]
+    xnqs = photons[:, 1:]
 
     # initialize model
     model = ImageModel(ns, xnqs)
@@ -228,7 +230,7 @@ if __name__ == "__main__":
 
         # plot the output of the s.g.
         if sumh > hplot:
-            hplot += 20.
+            hplot += 10.
             pfn = "./model_{:06d}.pkl".format(j)
             model.pickle_to_file(pfn)
             plt.clf()
