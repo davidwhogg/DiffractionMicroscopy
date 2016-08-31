@@ -3,6 +3,8 @@ Inferring an object from it's diffraction illumination pattern.
 
 ## Authors
 - David W. Hogg (NYU CCPP) (NYU CDS) (Simons SCDA)
+- Matt Mechtley (ASU)
+- Dalya Baron (TAU)
 
 ## License
 Copyright 2015 David W. Hogg.
