@@ -7,15 +7,17 @@ Inferring an object from it's diffraction illumination pattern.
 - Dalya Baron (TAU)
 
 ## License
-Copyright 2015 David W. Hogg.
+Copyright 2016 the authors.
 **DifractionMicroscopy** is open-source software with an **MIT License**.
 See the file `LICENSE` for details.
 
 ## Acknowledgements
 This project is heavily influenced by discussions with
 - Charlie Epstein (Penn)
+- Dan Foreman-Mackey (UW)
 - Leslie Greengard (SCDA) (NYU)
 - Jeremy Magland (SCDA)
+- Marina Spivak (SCDA)
 
 This project depends on a great stack of *open-source software:*
 - Python3
