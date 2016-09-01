@@ -56,9 +56,9 @@ class ImageModel:
         - Magic numbers.
         - The three-d model is actually two-d, which is cheating!!
         """
-        self.sigma = 2.0  # magic
+        self.sigma = 3.0  # magic # 2.0
         self.sigma2 = self.sigma ** 2
-        nyhalf, nxhalf = 12, 24  # magic
+        nyhalf, nxhalf = 16, 16  # magic # 12, 24
         yms, xms = np.meshgrid(np.arange(2 * nyhalf + 1),
                                np.arange(2 * nxhalf + 1))
         yms = (yms - nyhalf).flatten() * self.sigma  # lots of magic
@@ -69,7 +69,7 @@ class ImageModel:
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self, T=1024):  # MAGIC 1024
+    def create_angle_sampling(self, T=2**10):  # MAGIC 1024
         """
         # issues
         - Ought to re-draw yhats that have large dot products with xhats...
@@ -127,8 +127,9 @@ class ImageModel:
         - Magic numbers.
         - Requires matplotlib (or the ducktype).
         """
-        ys = np.arange(-30.5, 31, 1) # magic
-        xs = np.arange(-50.5, 51, 1) # magic
+        f = 0.65 # magic
+        ys = np.arange(-self.sigma * f * np.sqrt(self.M), self.sigma * f * np.sqrt(self.M), 1) # magic
+        xs = np.arange(-self.sigma * f * np.sqrt(self.M), self.sigma * f * np.sqrt(self.M), 1) # magic
         ys, xs = np.meshgrid(ys, xs)
         ny, nx = ys.shape
         xps = np.zeros((ny, nx, 2))
@@ -230,7 +231,7 @@ if __name__ == "__main__":
 
         # plot the output of the s.g.
         if sumh > hplot:
-            hplot += 10.
+            hplot += 40.
             pfn = "./model_{:06d}.pkl".format(j)
             model.pickle_to_file(pfn)
             plt.clf()
