@@ -29,7 +29,7 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     return indexes_3d + jitter - np.array(image.shape) / 2
 
 
-def project_by_random_matrix(photon_zyxs, distort='quadrupole', return_matrix=False):
+def project_by_random_matrix(photon_zyxs, distort=None, return_matrix=False):
     """
     Generate a randomized 3D-to-2D projection matrix, and project given photon
     positions using it.
