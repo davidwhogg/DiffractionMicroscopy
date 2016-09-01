@@ -29,7 +29,7 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     return indexes_3d + jitter - np.array(image.shape) / 2
 
 
-def project_by_random_matrix(photon_zyxs, distort=None, return_matrix=False):
+def project_by_random_matrix(photon_zyxs, distort='quadrupole', return_matrix=False):
     """
     Generate a randomized 3D-to-2D projection matrix, and project given photon
     positions using it.
@@ -61,7 +61,7 @@ def project_by_random_matrix(photon_zyxs, distort=None, return_matrix=False):
     return projected_yxs
 
 
-def make_fake_data(truth, N=1024, rate=1.):
+def make_fake_data(truth, N=1024, rate=1., distort=None):
     """
     # inputs:
     - truth: pixelized image of density
@@ -94,7 +94,7 @@ def make_fake_data(truth, N=1024, rate=1.):
     row = 0
     for n, Q in enumerate(Qs):
         photon_zyxs_img = photon_zyxs[row:row+Q, :]
-        photon_yxs = project_by_random_matrix(photon_zyxs_img)
+        photon_yxs = project_by_random_matrix(photon_zyxs_img, distort=distort)
         nyxs[row:row+Q, :] = np.column_stack([np.repeat(n, Q), photon_yxs])
         row += Q
 
@@ -106,13 +106,12 @@ def make_fake_data(truth, N=1024, rate=1.):
     return nyxs[:, 0], nyxs[:, 1], nyxs[:, 2]
 
 
-def make_truth():
+def make_truth(img_file='./truth.png'):
     """
     Load in the truth image data, embed it into a 3d array, then rotate it in a
     weird way
     """
-    datafn = "./truth.png"
-    pixels = 1.0 - mplimg.imread(datafn)[:, :, 0]  # b&w image, just grab red
+    pixels = 1.0 - mplimg.imread(img_file)[:, :, 0]  # b&w image, just grab red
 
     # Now embed in 3d array and rotate in some interesting way
     voxels = np.zeros(pixels.shape + (pixels.shape[0], ))
@@ -133,7 +132,7 @@ def make_truth():
                           indexing='ij')
     disp_vox = voxels > 0.3
     ax.scatter(x[disp_vox], y[disp_vox], z[disp_vox])
-    plt.savefig(datafn.replace('.png', '_3d.png'))
+    plt.savefig(img_file.replace('.png', '_3d.png'))
     # plt.show()
 
     print("truth:", voxels.shape)
@@ -141,19 +140,22 @@ def make_truth():
 
 
 def angle_axis_to_matrix(angle_axis):
+    """
+    Generate a rotation matrix given a rotation represented in angle-axis form
+
+    :param angle_axis: Rotation represented in angle-axis form (vector direction
+    is angle, vector length is angle in radians)
+    :return: Same rotation in matrix form
+    """
     ang = np.sqrt(np.dot(angle_axis, angle_axis))
     axis = angle_axis / ang
     s_ang = np.sin(ang)
     c_ang = np.cos(ang)
-
     out_matrix = c_ang * np.eye(3)
-
     out_matrix += s_ang * np.array(((0, -axis[2], axis[1]),
                                     (axis[2], 0, -axis[0]),
                                     (-axis[1], axis[0], 0)))
-
     out_matrix += (1 - c_ang) * np.outer(axis, axis)
-
     return out_matrix
 
 
@@ -180,26 +182,28 @@ if __name__ == '__main__':
     # Repeatability
     np.random.seed(42)
 
-    # make fake data
-    truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=2**14, rate=2**4)
-    xnqs = np.vstack((ys, xs)).T
+    truth = make_truth('./truth.png')
 
-    print("fake data:", ns.shape, xnqs.shape)
+    for distort in (None, 'dipole', 'quadrupole'):
+        # make fake data
+        ns, ys, xs = make_fake_data(truth, N=2**14, rate=2**4, distort=distort)
+        xnqs = np.vstack((ys, xs)).T
 
-    # plot first 20 fake data
-    plt.figure()
-    for n in range(20):
-        plt.clf()
-        I = (ns == n)
-        plt.plot(xs[I], ys[I], 'k.')
-        plt.axis("square")
-        plt.xlim(-50., 50.)
-        plt.ylim(-50., 50.)
-        plt.title("image $n={}$ ($Q={}$)".format(n, np.sum(I)))
-        pfn = "./datum_{:06d}.png".format(n)
-        plt.savefig(pfn)
-        print(pfn)
+        print("fake data:", ns.shape, xnqs.shape)
 
-    # Pickle photon location info and random number generator state
-    np.save('./photons.npy', np.column_stack([ns, xnqs]))
+        # Pickle photon location info and random number generator state
+        np.save('./photons_{}.npy'.format(distort), np.column_stack([ns, xnqs]))
+
+        # plot first 20 fake data
+        plt.figure()
+        for n in range(20):
+            plt.clf()
+            I = (ns == n)
+            plt.plot(xs[I], ys[I], 'k.')
+            plt.axis("square")
+            plt.xlim(-50., 50.)
+            plt.ylim(-50., 50.)
+            plt.title("image $n={}$ ($Q={}$)".format(n, np.sum(I)))
+            pfn = "./datum_{:06d}_{}.png".format(n, distort)
+            plt.savefig(pfn)
+            print(pfn)
