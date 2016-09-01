@@ -22,8 +22,6 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     draws = np.random.uniform(size=nphot) * cdf[-1]
 
     insert_locations = np.searchsorted(cdf, draws)
-    argmin_location = np.argmin(np.abs(cdf - draws[0]))
-    # assert insert_locations[0] == argmin_location
     insert_locations = cdf_indexes[insert_locations]
     indexes_3d = np.unravel_index(insert_locations, image.shape)
     indexes_3d = np.column_stack(indexes_3d)
@@ -87,7 +85,7 @@ def make_fake_data(truth, N=1024, rate=1.):
     cdf_mask = truth > 0
     cdf = np.cumsum(truth[cdf_mask])
     cdf_indexes = np.arange(truth.size, dtype=int)
-    cdf_indexes = cdf_indexes.reshape((truth.shape))
+    cdf_indexes = cdf_indexes.reshape(truth.shape)
     cdf_indexes = cdf_indexes[cdf_mask]
 
     photon_zyxs = get_photon_positions(truth, cdf, cdf_indexes,
@@ -105,7 +103,7 @@ def make_fake_data(truth, N=1024, rate=1.):
         curr_pct = 100 * n // N
         if next_pct - curr_pct > 0:
             print('{:d}%'.format(next_pct))
-    return nyxs[:,0], nyxs[:,1], nyxs[:,2]
+    return nyxs[:, 0], nyxs[:, 1], nyxs[:, 2]
 
 
 def make_truth():
@@ -129,8 +127,10 @@ def make_truth():
     # Remake the truth figure in 3D
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    x,y,z = np.meshgrid(np.arange(voxels.shape[0]),np.arange(voxels.shape[1]),
-                        np.arange(voxels.shape[2]), indexing='ij')
+    x, y, z = np.meshgrid(np.arange(voxels.shape[0]),
+                          np.arange(voxels.shape[1]),
+                          np.arange(voxels.shape[2]),
+                          indexing='ij')
     disp_vox = voxels > 0.3
     ax.scatter(x[disp_vox], y[disp_vox], z[disp_vox])
     plt.savefig(datafn.replace('.png', '_3d.png'))
