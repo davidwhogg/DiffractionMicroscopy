@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import png
 from scipy import ndimage
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.image as mplimg
 
 
 def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
@@ -31,7 +31,7 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     return indexes_3d + jitter - np.array(image.shape) / 2
 
 
-def project_by_random_matrix(photon_zyxs):
+def project_by_random_matrix(photon_zyxs, ):
     """
     Generate a randomized 3D-to-2D projection matrix, and project given photon
     positions using it.
@@ -106,22 +106,12 @@ def make_truth():
     OMG dumb.
     dependency: PyPNG
     """
-    plt.figure(figsize=(0.6, 0.4))
-    plt.clf()
-    plt.text(0.5, 0.5, r"Dalya",
-             ha="center", va="center",
-             clip_on=False,
-             transform=plt.gcf().transFigure)
-    plt.gca().set_axis_off()
     datafn = "./truth.png"
-    plt.savefig(datafn, dpi=200)
-    w, h, pixels, metadata = png.Reader(filename=datafn).read_flat()
-    pixels = (np.array(pixels).reshape((h, w, 4)))[::-1, :, 0]
-    pixels = (np.max(pixels) - pixels) / np.max(pixels)
+    pixels = 1.0 - mplimg.imread(datafn)[:, :, 0]  # b&w image so only one channel
 
     # Now embed in 3d array and rotate in some interesting way
-    voxels = np.zeros(pixels.shape+(0.5*200,))
-    voxels[:, :, 40] = pixels
+    voxels = np.zeros(pixels.shape + (pixels.shape[0], ))
+    voxels[:, :, voxels.shape[2] // 2] = pixels
     rot_ang_axis = np.array((2, 1, 0.5))  # Something "interesting"
     # rot_ang_axis = np.array((0, 1.4, 0))
     aff_matrix = angle_axis_to_matrix(rot_ang_axis)
@@ -140,7 +130,7 @@ def make_truth():
     plt.savefig(datafn.replace('.png', '_3d.png'))
     # plt.show()
 
-    print("truth:", w, h, voxels.shape, metadata)
+    print("truth:", voxels.shape)
     return voxels
 
 
@@ -167,7 +157,7 @@ if __name__ == '__main__':
 
     # make fake data
     truth = make_truth()
-    ns, ys, xs = make_fake_data(truth, N=2**10, rate=2**8)
+    ns, ys, xs = make_fake_data(truth, N=2**14, rate=2**4)
     xnqs = np.vstack((ys, xs)).T
 
     print("fake data:", ns.shape, xnqs.shape)
