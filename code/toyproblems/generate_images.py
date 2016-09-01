@@ -22,8 +22,6 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     draws = np.random.uniform(size=nphot) * cdf[-1]
 
     insert_locations = np.searchsorted(cdf, draws)
-    argmin_location = np.argmin(np.abs(cdf - draws[0]))
-    # assert insert_locations[0] == argmin_location
     insert_locations = cdf_indexes[insert_locations]
     indexes_3d = np.unravel_index(insert_locations, image.shape)
     indexes_3d = np.column_stack(indexes_3d)
@@ -31,18 +29,23 @@ def get_photon_positions(image, cdf, cdf_indexes, nphot=1):
     return indexes_3d + jitter - np.array(image.shape) / 2
 
 
-def project_by_random_matrix(photon_zyxs, ):
+def project_by_random_matrix(photon_zyxs, distort=None, return_matrix=False):
     """
     Generate a randomized 3D-to-2D projection matrix, and project given photon
     positions using it.
 
     :param photon_zyxs: Photon positions in 3D, zyx order
+    :param distort: Either None, dipole, or quadrapole
 
     :return: Projected photon positions in 2D, yx order
     """
     # TODO: Two randomly drawn vectors *might* almost dot to 1. Better to just
     # select one axis and then a uniform angle?
     rand_tan1 = np.random.normal(size=3)
+    if distort == 'dipole':
+        rand_tan1 += (0.9, 0, 0)
+    elif distort == 'quadrupole':
+        rand_tan1 *= (1.9, 1.0, 1.0)
     rand_tan1 = rand_tan1 / np.sqrt(np.dot(rand_tan1, rand_tan1))
     rand_tan2 = np.random.normal(size=3)
     rand_tan2 -= np.dot(rand_tan1, rand_tan2) * rand_tan1
@@ -50,6 +53,8 @@ def project_by_random_matrix(photon_zyxs, ):
     assert np.isclose(np.dot(rand_tan1, rand_tan2), 0.0)
 
     projection_matrix = np.vstack((rand_tan1, rand_tan2))
+    if return_matrix:
+        return projection_matrix
 
     projected_yxs = np.dot(projection_matrix, photon_zyxs.T).T
 
@@ -80,7 +85,7 @@ def make_fake_data(truth, N=1024, rate=1.):
     cdf_mask = truth > 0
     cdf = np.cumsum(truth[cdf_mask])
     cdf_indexes = np.arange(truth.size, dtype=int)
-    cdf_indexes = cdf_indexes.reshape((truth.shape))
+    cdf_indexes = cdf_indexes.reshape(truth.shape)
     cdf_indexes = cdf_indexes[cdf_mask]
 
     photon_zyxs = get_photon_positions(truth, cdf, cdf_indexes,
@@ -98,33 +103,34 @@ def make_fake_data(truth, N=1024, rate=1.):
         curr_pct = 100 * n // N
         if next_pct - curr_pct > 0:
             print('{:d}%'.format(next_pct))
-    return nyxs[:,0], nyxs[:,1], nyxs[:,2]
+    return nyxs[:, 0], nyxs[:, 1], nyxs[:, 2]
 
 
 def make_truth():
     """
-    OMG dumb.
-    dependency: PyPNG
+    Load in the truth image data, embed it into a 3d array, then rotate it in a
+    weird way
     """
     datafn = "./truth.png"
-    pixels = 1.0 - mplimg.imread(datafn)[:, :, 0]  # b&w image so only one channel
+    pixels = 1.0 - mplimg.imread(datafn)[:, :, 0]  # b&w image, just grab red
 
     # Now embed in 3d array and rotate in some interesting way
     voxels = np.zeros(pixels.shape + (pixels.shape[0], ))
     voxels[:, :, voxels.shape[2] // 2] = pixels
     rot_ang_axis = np.array((2, 1, 0.5))  # Something "interesting"
-    # rot_ang_axis = np.array((0, 1.4, 0))
     aff_matrix = angle_axis_to_matrix(rot_ang_axis)
-    center = np.array(voxels.shape)/2  # whatever close enough
-    # affine_transform offset parameter is dumb
+    # Rotate about center, but affine_transform offset parameter is dumb
+    center = np.array(voxels.shape) / 2  # whatever close enough
     offset = -(center - center.dot(aff_matrix)).dot(np.linalg.inv(aff_matrix))
     voxels = ndimage.affine_transform(voxels, aff_matrix, offset=offset)
 
     # Remake the truth figure in 3D
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    x,y,z = np.meshgrid(np.arange(voxels.shape[0]),np.arange(voxels.shape[1]),
-                        np.arange(voxels.shape[2]), indexing='ij')
+    x, y, z = np.meshgrid(np.arange(voxels.shape[0]),
+                          np.arange(voxels.shape[1]),
+                          np.arange(voxels.shape[2]),
+                          indexing='ij')
     disp_vox = voxels > 0.3
     ax.scatter(x[disp_vox], y[disp_vox], z[disp_vox])
     plt.savefig(datafn.replace('.png', '_3d.png'))
@@ -151,7 +157,26 @@ def angle_axis_to_matrix(angle_axis):
     return out_matrix
 
 
+def test_project_by_random_matrix(nsamples=2**11):
+    for distort in (None, 'dipole', 'quadrupole'):
+        # We'll just plot the first random projection vector rather than the
+        # second orthogonalized one.
+        proj_tans = np.zeros((nsamples, 3), dtype=float)
+        for sample in range(nsamples):
+            matrix = project_by_random_matrix(proj_tans[sample],
+                                              distort=distort,
+                                              return_matrix=True)
+            proj_tans[sample] = matrix[0]
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(proj_tans[:, 2], proj_tans[:, 1], proj_tans[:, 0])
+        plt.show()
+
+
 if __name__ == '__main__':
+    # test_project_by_random_matrix()
+
     # Repeatability
     np.random.seed(42)
 
