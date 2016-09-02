@@ -33,12 +33,14 @@ Example low-photon images:
 Here is a video of the stochastic gradient inferring the 3D structure from 16,384 such images.
 
 Video of fitting process:
+
 https://youtu.be/RkA5-lhMlLI
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pqTb3y8Agx4" frameborder="0" allowfullscreen></iframe>
 
 Here is an image of the true 3D structure that generated the low-photon images – note NOT a mixture of gaussians like the model used for inference.
 
 True data these were generated from:
+
 ![png](./truth_3d.png)
 
 Anisotropic case:
@@ -68,10 +70,14 @@ We also tried with an awful anisotropic distribution of angles. The fitting stil
 <img src="./datum_000019_dipole.png" width=250 height=188>
 
 Fitting:
+
 https://youtu.be/pqTb3y8Agx4
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RkA5-lhMlLI" frameborder="0" allowfullscreen></iframe>
 
 True data:
+
 ![png](./truth_3d_dipole.png)
-Angle distribution
+
+Angle distribution:
+
 ![png](./aniso.png)
