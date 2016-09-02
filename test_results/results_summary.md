@@ -24,7 +24,6 @@ Example low-photon images:
 ![png](./datum_000019_None.png)
 
 Video of fitting process:
-https://youtu.be/RkA5-lhMlLI
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pqTb3y8Agx4" frameborder="0" allowfullscreen></iframe>
 
 True data these were generated from:
@@ -54,7 +53,6 @@ Anisotropic case:
 ![png](./datum_000019_dipole.png)
 
 Fitting:
-https://youtu.be/pqTb3y8Agx4
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RkA5-lhMlLI" frameborder="0" allowfullscreen></iframe>
 
 True data:
