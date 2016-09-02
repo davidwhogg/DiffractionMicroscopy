@@ -1,12 +1,16 @@
+Basic Idea:
+-----------
+We have a bunch of very-low photon images of the same object, each taken from a many different viewing angles, but we don't know those angles. We want to infer the 3D structure of the original object (a molecule in this case) from many of these extremely low-count images.
+
 Isotropic case:
 ---------------
 
 Here is a small sample of the test dataset of very low photon count images (average 16 photons each).
 
 Example low-photon images:
-![png](./datum_000000_None.png)
-![png](./datum_000001_None.png)
-![png](./datum_000002_None.png)
+<img src="./datum_000000_None.png" width=200 height=150>
+<img src="./datum_000001_None.png" width=200 height=150>
+<img src="./datum_000002_None.png" width=200 height=150>
 <!-- ![png](./datum_000003_None.png)
 ![png](./datum_000004_None.png)
 ![png](./datum_000005_None.png)
@@ -42,9 +46,9 @@ Anisotropic case:
 We also tried with an awful anisotropic distribution of angles. The fitting still works surprisingly well (video)!
 
 
-![png](./datum_000000_dipole.png)
-![png](./datum_000001_dipole.png)
-![png](./datum_000002_dipole.png)
+<img src="./datum_000000_dipole.png" width=200 height=150>
+<img src="./datum_000001_dipole.png" width=200 height=150>
+<img src="./datum_000002_dipole.png" width=200 height=150>
 <!-- ![png](./datum_000003_dipole.png)
 ![png](./datum_000004_dipole.png)
 ![png](./datum_000005_dipole.png)
