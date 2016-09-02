@@ -1,6 +1,9 @@
 # DiffractionMicroscopy
 Inferring an object from it's diffraction illumination pattern.
 
+![badge-img](https://img.shields.io/badge/Made%20at-%23AstroHackWeek-8063d5.svg?style=flat)
+
+
 ## Authors
 - David W. Hogg (NYU CCPP) (NYU CDS) (Simons SCDA)
 - Matt Mechtley (ASU)
