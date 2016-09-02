@@ -8,26 +8,26 @@ Isotropic case:
 Here is a small sample of the test dataset of very low photon count images (average 16 photons each).
 
 Example low-photon images:
-<img src="./datum_000000_None.png" width=200 height=150>
-<img src="./datum_000001_None.png" width=200 height=150>
-<img src="./datum_000002_None.png" width=200 height=150>
-<!-- ![png](./datum_000003_None.png)
-![png](./datum_000004_None.png)
-![png](./datum_000005_None.png)
-![png](./datum_000006_None.png)
-![png](./datum_000007_None.png)
-![png](./datum_000008_None.png)
-![png](./datum_000009_None.png)
-![png](./datum_000010_None.png)
-![png](./datum_000011_None.png)
-![png](./datum_000012_None.png)
-![png](./datum_000013_None.png)
-![png](./datum_000014_None.png)
-![png](./datum_000015_None.png)
-![png](./datum_000016_None.png)
-![png](./datum_000017_None.png)
-![png](./datum_000018_None.png)
-![png](./datum_000019_None.png) -->
+<img src="./datum_000000_None.png" width=300 height=225>
+<img src="./datum_000001_None.png" width=300 height=225>
+<img src="./datum_000002_None.png" width=300 height=225>
+<img src="./datum_000003_None.png" width=300 height=225>
+<img src="./datum_000004_None.png" width=300 height=225>
+<img src="./datum_000005_None.png" width=300 height=225>
+<img src="./datum_000006_None.png" width=300 height=225>
+<img src="./datum_000007_None.png" width=300 height=225>
+<img src="./datum_000008_None.png" width=300 height=225>
+<img src="./datum_000009_None.png" width=300 height=225>
+<img src="./datum_000010_None.png" width=300 height=225>
+<img src="./datum_000011_None.png" width=300 height=225>
+<img src="./datum_000012_None.png" width=300 height=225>
+<img src="./datum_000013_None.png" width=300 height=225>
+<img src="./datum_000014_None.png" width=300 height=225>
+<img src="./datum_000015_None.png" width=300 height=225>
+<img src="./datum_000016_None.png" width=300 height=225>
+<img src="./datum_000017_None.png" width=300 height=225>
+<img src="./datum_000018_None.png" width=300 height=225>
+<img src="./datum_000019_None.png" width=300 height=225>
 
 Here is a video of the stochastic gradient inferring the 3D structure from 16,384 such images.
 
@@ -45,27 +45,26 @@ Anisotropic case:
 
 We also tried with an awful anisotropic distribution of angles. The fitting still works surprisingly well (video)!
 
-
-<img src="./datum_000000_dipole.png" width=200 height=150>
-<img src="./datum_000001_dipole.png" width=200 height=150>
-<img src="./datum_000002_dipole.png" width=200 height=150>
-<!-- ![png](./datum_000003_dipole.png)
-![png](./datum_000004_dipole.png)
-![png](./datum_000005_dipole.png)
-![png](./datum_000006_dipole.png)
-![png](./datum_000007_dipole.png)
-![png](./datum_000008_dipole.png)
-![png](./datum_000009_dipole.png)
-![png](./datum_000010_dipole.png)
-![png](./datum_000011_dipole.png)
-![png](./datum_000012_dipole.png)
-![png](./datum_000013_dipole.png)
-![png](./datum_000014_dipole.png)
-![png](./datum_000015_dipole.png)
-![png](./datum_000016_dipole.png)
-![png](./datum_000017_dipole.png)
-![png](./datum_000018_dipole.png)
-![png](./datum_000019_dipole.png) -->
+<img src="./datum_000000_dipole.png" width=300 height=225>
+<img src="./datum_000001_dipole.png" width=300 height=225>
+<img src="./datum_000002_dipole.png" width=300 height=225>
+<img src="./datum_000003_dipole.png" width=300 height=225>
+<img src="./datum_000004_dipole.png" width=300 height=225>
+<img src="./datum_000005_dipole.png" width=300 height=225>
+<img src="./datum_000006_dipole.png" width=300 height=225>
+<img src="./datum_000007_dipole.png" width=300 height=225>
+<img src="./datum_000008_dipole.png" width=300 height=225>
+<img src="./datum_000009_dipole.png" width=300 height=225>
+<img src="./datum_000010_dipole.png" width=300 height=225>
+<img src="./datum_000011_dipole.png" width=300 height=225>
+<img src="./datum_000012_dipole.png" width=300 height=225>
+<img src="./datum_000013_dipole.png" width=300 height=225>
+<img src="./datum_000014_dipole.png" width=300 height=225>
+<img src="./datum_000015_dipole.png" width=300 height=225>
+<img src="./datum_000016_dipole.png" width=300 height=225>
+<img src="./datum_000017_dipole.png" width=300 height=225>
+<img src="./datum_000018_dipole.png" width=300 height=225>
+<img src="./datum_000019_dipole.png" width=300 height=225>
 
 Fitting:
 https://youtu.be/pqTb3y8Agx4
