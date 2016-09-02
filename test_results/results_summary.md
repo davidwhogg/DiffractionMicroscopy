@@ -1,6 +1,8 @@
 Isotropic case:
 ---------------
 
+Here is a small sample of the test dataset of very low photon count images (average 16 photons each).
+
 Example low-photon images:
 ![png](./datum_000000_None.png)
 ![png](./datum_000001_None.png)
@@ -23,15 +25,23 @@ Example low-photon images:
 ![png](./datum_000018_None.png)
 ![png](./datum_000019_None.png) -->
 
+Here is a video of the stochastic gradient inferring the 3D structure from 16,384 such images.
+
 Video of fitting process:
 https://youtu.be/RkA5-lhMlLI
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pqTb3y8Agx4" frameborder="0" allowfullscreen></iframe>
 
+Here is an image of the true 3D structure that generated the low-photon images – note NOT a mixture of gaussians like the model used for inference.
+
 True data these were generated from:
 ![png](./truth_3d.png)
 
-
 Anisotropic case:
+-----------------
+
+We also tried with an awful anisotropic distribution of angles. The fitting still works surprisingly well (video)!
+
+
 ![png](./datum_000000_dipole.png)
 ![png](./datum_000001_dipole.png)
 ![png](./datum_000002_dipole.png)
