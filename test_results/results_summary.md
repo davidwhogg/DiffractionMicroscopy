@@ -34,8 +34,7 @@ Here is a video of the stochastic gradient inferring the 3D structure from 16,38
 
 Video of fitting process:
 
-https://youtu.be/RkA5-lhMlLI
-<iframe width="560" height="315" src="https://www.youtube.com/embed/pqTb3y8Agx4" frameborder="0" allowfullscreen></iframe>
+[![youtube](./youtube_iso.png)](https://youtu.be/RkA5-lhMlLI)
 
 Here is an image of the true 3D structure that generated the low-photon images – note NOT a mixture of gaussians like the model used for inference.
 
@@ -71,8 +70,7 @@ We also tried with an awful anisotropic distribution of angles. The fitting stil
 
 Fitting:
 
-https://youtu.be/pqTb3y8Agx4
-<iframe width="560" height="315" src="https://www.youtube.com/embed/RkA5-lhMlLI" frameborder="0" allowfullscreen></iframe>
+[![youtube](./youtube_aniso.png)](https://youtu.be/pqTb3y8Agx4)
 
 True data:
 
