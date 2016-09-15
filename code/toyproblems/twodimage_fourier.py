@@ -59,17 +59,26 @@ def hoggsumexp2(lnas, lnzs, axis=None):
     expqns = np.exp(qns - Q)
     expLs = np.sum(expqns, axis=axis)
     expL = np.sum(expLs, axis=axis-1) # two sums!
-
     L = np.log(expL) + Q
-    dL_dlnas = expLs / np.expand_dims(expL, axis) #This line is not correct!!
 
-    print L.shape
-    print dL_dlnas.shape
+    # calculate the things I need for the derivative:
+    qn1 = lnzs[:, :, :, None] + np.conj(lnzs[:, :, None, :])
+    qn2 = lnzs[:, :, None, :] + np.conj(lnzs[:, :, :, None])
+    Q1 = np.max(qn1)
+    Q2 = np.max(qn2)
+    Q = np.max((Q1, Q2)) # I'm not sure that this is the correct way to go, need to make sure with Hogg!
+
+    dqn = lnas[None, None, None, :] + np.log(np.exp(qn1 - Q) + np.exp(qn2 - Q)) + Q 
+    DQ = np.max(dqn)
+    expDs = np.exp(dqn - DQ)
+    expD = np.sum(expDs, axis=axis)
+
+    dL_dlnas = expD / np.expand_dims(expL, axis-1)
 
     assert np.isclose(L, np.conj(L)).all()
     assert np.isclose(dL_dlnas, np.conj(dL_dlnas)).all()
 
-    return L, dL_dlnas
+    return np.real(L), np.real(dL_dlnas) # If I passed the assert, I can ignore the complex numbers
 
 class ImageModel:
 
