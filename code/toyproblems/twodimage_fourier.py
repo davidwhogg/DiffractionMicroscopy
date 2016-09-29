@@ -13,6 +13,14 @@ photons taken in exoposures at unknown orientations.
 import pickle
 import numpy as np
 
+try:
+    import numexpr as ne
+    ne.set_num_threads(ne.ncores)
+except ImportError:
+    ne = None
+    print('numexpr could not be imported, only single-thread calculations will '
+          'be used. Recommend abort and install numexpr!')
+
 
 def hoggsumexp(qns, axis=None):
     """
@@ -37,6 +45,34 @@ def hoggsumexp(qns, axis=None):
     expL = np.sum(expqns, axis=axis)
     return np.log(expL) + Q, expqns / np.expand_dims(expL, axis)
 
+
+def slice_for_step(whole_arr_slice, step, axis):
+    """
+    Returns the array slice for a given qns accumulation step, given the
+    general slice for generating the whole qns array (See general slices
+    in hoggsumexp2). The accumulation steps (qns_step in hoggsumexp2 below)
+    only have 3 axes, but the slice needs a 4th index in the case that a
+    specific row/col/etc is needed along the accumulation axis. E.g. suppose
+    axis=2, the following input slices on the left produce the outputs on the
+    right:
+    (:, :, :, None) --> (:, :, step, None)
+    (:, :, None, :) --> (:, :, :)
+    Note that both of the above produce a 3D array when used as an indexing
+    slice, e.g. lnzs[:, :, step, None] is 3D as is lnzs[:, :, :]
+
+    Note this *could* use a tuple comprehension instead, but comprehensions
+    can't be jit compiled by numba.
+    """
+    tup = tuple()
+    for ax_num, ax_slice in enumerate(whole_arr_slice):
+        if ax_slice is not None or ax_num != axis:
+            if ax_num == axis and ax_slice is not None:
+                tup = tup + (step, )
+            else:
+                tup = tup + (ax_slice, )
+    return tup
+
+
 def hoggsumexp2(lnas, lnzs, axis=None):
     """
     # porpose: 
@@ -54,31 +90,115 @@ def hoggsumexp2(lnas, lnzs, axis=None):
     """
     if axis is None:
         axis = len(lnzs.shape) # I expand the dimension of lnzs for the next calculation, so I need an extra dimension here!
-    qns = lnas[None, None, None, :] + lnas[None, None, :, None] + lnzs[:, :, :, None] + np.conj(lnzs[:, :, None, :])
-    Q = np.max(qns)
-    expqns = np.exp(qns - Q)
-    expLs = np.sum(expqns, axis=axis)
-    expL = np.sum(expLs, axis=axis-1) # two sums!
-    L = np.log(expL) + Q
 
-    # calculate the things I need for the derivative:
-    qn1 = lnzs[:, :, :, None] + np.conj(lnzs[:, :, None, :])
-    qn2 = lnzs[:, :, None, :] + np.conj(lnzs[:, :, :, None])
-    Q1 = np.max(qn1)
-    Q2 = np.max(qn2)
-    Q = np.max((Q1, Q2)) # I'm not sure that this is the correct way to go, need to make sure with Hogg!
+    # NEW METHOD HERE
 
-    dqn = lnas[None, None, None, :] + np.log(np.exp(qn1 - Q) + np.exp(qn2 - Q)) + Q 
-    DQ = np.max(dqn)
-    expDs = np.exp(dqn - DQ)
-    expD = np.sum(expDs, axis=axis)
+    # Shape of qns is same as lnzs with duplicated spatial axis. expLs is same
+    # as qns with summation axis gone.
+    qns_shape = lnzs.shape + (lnzs.shape[-1], )
+    expLs_shape = qns_shape[:axis] + qns_shape[axis + 1:]
+    # General slices for the whole qns/dqn arrays
+    # Note slice(None) is the same as : in slice notation, e.g. slice_lnzs_1
+    # below produces the same slice as lnzs[:, :, :, None]
+    slice_lnas_1 = (None, None, None, slice(None))
+    slice_lnas_2 = (None, None, slice(None), None)
+    slice_lnzs_1 = (slice(None), slice(None), slice(None), None)
+    slice_lnzs_2 = (slice(None), slice(None), None, slice(None))
 
-    dL_dlnas = expD / np.expand_dims(expL, axis-1)
+    # Pre-traverse just to calculate Qs for the whole array.
+    # Gotta be a better way, but let's make it work first.
+    Q = -np.inf
+    DQ = -np.inf
+    expLs = np.zeros(expLs_shape, dtype=lnzs.dtype)
+    expD = np.zeros_like(expLs)
+    # Execute 2 iteration passes. First finds Q and DQ max. Second accumulates.
+    for iter_pass in ('Q_DQ', 'accum'):
+        for step in range(qns_shape[axis]):
+            slice_lnas_1_step = slice_for_step(slice_lnas_1, step, axis)
+            slice_lnas_2_step = slice_for_step(slice_lnas_2, step, axis)
+            slice_lnzs_1_step = slice_for_step(slice_lnzs_1, step, axis)
+            slice_lnzs_2_step = slice_for_step(slice_lnzs_2, step, axis)
+            # Only perform these slices once and re-use sliced arrays
+            lnas_1_step = lnas[slice_lnas_1_step]
+            lnas_2_step = lnas[slice_lnas_2_step]
+            lnzs_1_step = lnzs[slice_lnzs_1_step]
+            lnzs_2_step = lnzs[slice_lnzs_2_step]
 
-    assert np.isclose(L, np.conj(L)).all()
-    assert np.isclose(dL_dlnas, np.conj(dL_dlnas)).all()
+            if ne is not None:
+                qn1_step = ne.evaluate('lnzs_1_step + conj(lnzs_2_step)')
+                qn2_step = ne.evaluate('lnzs_2_step + conj(lnzs_1_step)')
+                qns_step = ne.evaluate('lnas_1_step + lnas_2_step + qn1_step')
+            else:
+                qn1_step = lnzs_1_step + np.conj(lnzs_2_step)
+                qn2_step = lnzs_2_step + np.conj(lnzs_1_step)
+                qns_step = lnas_1_step + lnas_2_step + qn1_step
 
-    return np.real(L), np.real(dL_dlnas) # If I passed the assert, I can ignore the complex numbers
+            ZQ = np.max((np.max(qn1_step), np.max(qn2_step)))
+
+            if ne is not None:
+                dqn_step = ne.evaluate('lnas_1_step + log(exp(qn1_step - ZQ) + exp(qn2_step - ZQ)) + ZQ')
+            else:
+                dqn_step = lnas_1_step + np.log(np.exp(qn1_step - ZQ) + np.exp(qn2_step - ZQ)) + ZQ
+
+            # First pass will stop here, only finding max of all qns and all dqns
+            if iter_pass == 'Q_DQ':
+                Q = np.max((Q, np.max(qns_step)))
+                DQ = np.max((DQ, np.max(dqn_step)))
+                continue
+
+            if ne is not None:
+                expqns_step = ne.evaluate('exp(qns_step - Q)')
+                expDs_step = ne.evaluate('exp(dqn_step - DQ)')
+            else:
+                expqns_step = np.exp(qns_step - Q)
+                expDs_step = np.exp(dqn_step - DQ)
+
+            expLs += expqns_step
+            expD += expDs_step
+
+    if ne is not None:
+        # Some bug when supplying axis as a variable in numexpr, so just
+        # use format to insert the literal value in the string
+        expL = ne.evaluate('sum(expLs, {:d})'.format(axis-1))
+        L = ne.evaluate('real(log(expL) + Q)')
+        expanded_expL = np.expand_dims(expL, axis-1)
+        dL_dlnas = ne.evaluate('real(expD / expanded_expL)')
+
+        return L, dL_dlnas
+    else:
+        expL = np.sum(expLs, axis=axis-1)  # Perform second sum normally
+        L = np.log(expL) + Q
+        dL_dlnas = expD / np.expand_dims(expL, axis-1)
+
+        return np.real(L), np.real(dL_dlnas)
+
+    # END NEW METHOD
+
+    # qns = lnas[None, None, None, :] + lnas[None, None, :, None] + lnzs[:, :, :, None] + np.conj(lnzs[:, :, None, :])
+    # Q = np.max(qns)
+    # expqns = np.exp(qns - Q)
+    # expLs = np.sum(expqns, axis=axis)
+    # expL = np.sum(expLs, axis=axis-1) # two sums!
+    # L = np.log(expL) + Q
+    #
+    # # calculate the things I need for the derivative:
+    # qn1 = lnzs[:, :, :, None] + np.conj(lnzs[:, :, None, :])
+    # qn2 = lnzs[:, :, None, :] + np.conj(lnzs[:, :, :, None])
+    # Q1 = np.max(qn1)
+    # Q2 = np.max(qn2)
+    # Q = np.max((Q1, Q2)) # I'm not sure that this is the correct way to go, need to make sure with Hogg!
+    #
+    # dqn = lnas[None, None, None, :] + np.log(np.exp(qn1 - Q) + np.exp(qn2 - Q)) + Q
+    # DQ = np.max(dqn)
+    # expDs = np.exp(dqn - DQ)
+    # expD = np.sum(expDs, axis=axis)
+    #
+    # dL_dlnas = expD / np.expand_dims(expL, axis-1)
+    #
+    # assert np.isclose(L, np.conj(L)).all()
+    # assert np.isclose(dL_dlnas, np.conj(dL_dlnas)).all()
+    #
+    # return np.real(L), np.real(dL_dlnas) # If I passed the assert, I can ignore the complex numbers
 
 class ImageModel:
 
@@ -112,7 +232,7 @@ class ImageModel:
         self.lnams = np.random.normal(size=yms.shape)
         return None
 
-    def create_angle_sampling(self, T=2**2):  # MAGIC 1024
+    def create_angle_sampling(self, T=2**5):  # MAGIC 1024
         """
         # issues
         - Ought to re-draw yhats that have large dot products with xhats...
@@ -207,7 +327,7 @@ class ImageModel:
         lnLntqs, dlnLntqs_dlnams = hoggsumexp2(self.lnams, lngtqm, axis=3)
         assert lnLntqs.shape == (self.T, Q)
         assert dlnLntqs_dlnams.shape == (self.T, Q, self.M)
-        print "I DID ITTTTTT"
+        print("I DID ITTTTTT")
 
         # sum over q index (ie, product together all the photons in image n)
         lnLnts = np.sum(lnLntqs, axis=1)
@@ -251,7 +371,7 @@ def test_hoggsumexp():
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    photons = np.load('./photons.npy')
+    photons = np.load('./photons_None_fft.npy')
     ## ns = photons[:, 0] ## for real space
     ## xnqs = photons[:, 1:] ## for real space
     ns = photons[:, 0]
